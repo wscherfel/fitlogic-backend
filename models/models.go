@@ -15,13 +15,15 @@ const (
 type User struct {
 	gorm.Model
 
-	Name string
-	Email string `valid:"email" gorm:"unique"`
-	Password string
-	Role int
+	Name string `valid:"required"`
+	Email string `valid:"email,required" gorm:"unique"`
+	Password string `valid:"required"`
+	Role int `valid:"required"`
 	Skills string
 
-	Projects []Project `gorm:"many2many:user_projects;"`
+	Projects []Project `gorm:"many2many:user_projects;" json:"omitempty"`
+
+	Risks []Risk `json:"omitempty"`
 }
 
 // @dao
@@ -58,7 +60,7 @@ type Risk struct {
 	Start time.Time
 	End time.Time
 
-	Owner int
+	UserID int
 
 	Projects []Project `gorm:"many2many:risk_projects;"`
 

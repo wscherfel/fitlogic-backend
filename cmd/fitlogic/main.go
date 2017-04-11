@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"github.com/wscherfel/fitlogic-backend/controllers"
+	"github.com/wscherfel/fitlogic-backend"
 )
 
 const (
@@ -37,9 +38,12 @@ func main() {
 	// currently only endpoint that does not use JWT authentication
 	e.POST("/login", userController.Login)
 
-	users := e.Group("/users", /*middleware.JWT([]byte(fitlogic.Secret))*/)
+	users := e.Group("/users", middleware.JWT([]byte(fitlogic.Secret)))
 
-	users.POST("/", userController.Register)
+	users.POST("/", userController.Create)
+	users.GET("/", userController.Read)
+	users.GET("/:id", userController.ReadByID)
+	users.DELETE("/:id", userController.DeleteByID)
 
 	e.Logger.Fatal(e.Start("0.0.0.0:"+serverPort))
 }

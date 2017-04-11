@@ -27,8 +27,8 @@ func CreateToken(userId uint, role int) (string, error) {
 
 	claims := token.Claims.(jwt.MapClaims)
 	claims["exp"] = time.Now().Add(fitlogic.JWTExpiration).Unix()
-	claims["name"]= userId
-	claims["admin"]= role
+	claims["usedId"]= userId
+	claims["role"]= role
 
 	tokenString, err := token.SignedString([]byte(fitlogic.Secret))
 	if err != nil {
@@ -36,4 +36,15 @@ func CreateToken(userId uint, role int) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func GetUserIdAndRoleFromToken(token *jwt.Token) (id uint, role int, err error) {
+	claims := token.Claims.(jwt.MapClaims)
+	id, foundId := claims["usedId"].(uint)
+	role, foundRole := claims["role"].(int)
+	if !foundId || !foundRole {
+		return 0, 0, ErrMissingTokenClaims
+	}
+
+	return id, role, nil
 }
