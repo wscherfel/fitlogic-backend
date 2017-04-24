@@ -39,6 +39,13 @@ type LoginResponse struct {
 	Role int
 }
 
+type UpdateRequest struct {
+	Name string
+	Email string `valid:"email"`
+	Role int
+	Skills string
+}
+
 func NewUserController(config UserControllerConfig) *UserController {
 	newController :=  &UserController{
 		UserControllerConfig: config,
@@ -162,11 +169,11 @@ func (c *UserController) DeleteByID(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, common.CreateError(common.ErrIdInPathWrongFormat))
 	}
 	pathID := uint(pathIDuint64)
-	jwtID, role, err := common.GetUserIdAndRoleFromToken(ctx.Get("user").(*jwt.Token))
+	_, role, err := common.GetUserIdAndRoleFromToken(ctx.Get("user").(*jwt.Token))
 	if err != nil {
 		return ctx.JSON(http.StatusBadRequest, common.CreateError(err))
 	}
-	if role >= models.RoleUser && jwtID != pathID{ // the >= condition is for possibility of adding new user roles
+	if role != models.RoleAdmin { // the >= condition is for possibility of adding new user roles
 		return ctx.JSON(http.StatusUnauthorized, common.CreateError(common.ErrUnsufficientPrivileges))
 	}
 
@@ -180,6 +187,43 @@ func (c *UserController) DeleteByID(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, common.CreateError(err))
 	}
 
-
 	return ctx.NoContent(http.StatusOK)
+}
+
+func (c *UserController) UpdateByID(ctx echo.Context) error {
+	pathIDuint64, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, common.CreateError(common.ErrIdInPathWrongFormat))
+	}
+	pathID := uint(pathIDuint64)
+	jwtID, JWTRole, err := common.GetUserIdAndRoleFromToken(ctx.Get("user").(*jwt.Token))
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, common.CreateError(err))
+	}
+	if JWTRole >= models.RoleUser && jwtID != pathID{ // the >= condition is for possibility of adding new user roles
+		return ctx.JSON(http.StatusUnauthorized, common.CreateError(common.ErrUnsufficientPrivileges))
+	}
+
+	requestValues := &UpdateRequest{}
+	err = common.BindAndValid(ctx, requestValues)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, common.CreateError(err))
+	}
+
+	updatedVals := &models.User{
+		Name: requestValues.Name,
+		Email: requestValues.Email,
+		Skills: requestValues.Skills,
+	}
+
+	if JWTRole == models.RoleAdmin {
+		updatedVals.Role = requestValues.Role
+	}
+
+	newVals, err := c.UserDao.Update(updatedVals, pathID)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, common.CreateError(err))
+	}
+
+	return ctx.JSON(http.StatusOK, newVals)
 }

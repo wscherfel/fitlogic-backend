@@ -44,6 +44,7 @@ func main() {
 	users.GET("/", userController.Read)
 	users.GET("/:id", userController.ReadByID)
 	users.DELETE("/:id", userController.DeleteByID)
+	users.PUT("/:id", userController.UpdateByID)
 
 	e.Logger.Fatal(e.Start("0.0.0.0:"+serverPort))
 }

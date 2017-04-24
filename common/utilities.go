@@ -23,12 +23,11 @@ func BindAndValid(c echo.Context, model interface{}) error {
 }
 
 func CreateToken(userId uint, role int) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-
-	claims := token.Claims.(jwt.MapClaims)
-	claims["exp"] = time.Now().Add(fitlogic.JWTExpiration).Unix()
-	claims["usedId"]= userId
-	claims["role"]= role
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"exp":time.Now().Add(fitlogic.JWTExpiration).Unix(),
+		"userId": userId,
+		"role": role,
+	})
 
 	tokenString, err := token.SignedString([]byte(fitlogic.Secret))
 	if err != nil {
@@ -40,8 +39,15 @@ func CreateToken(userId uint, role int) (string, error) {
 
 func GetUserIdAndRoleFromToken(token *jwt.Token) (id uint, role int, err error) {
 	claims := token.Claims.(jwt.MapClaims)
-	id, foundId := claims["usedId"].(uint)
-	role, foundRole := claims["role"].(int)
+
+	nonTypedId, foundId := claims["userId"]
+	floatId := nonTypedId.(float64)
+	id = uint(floatId)
+
+	nonTypedRole, foundRole := claims["role"]
+	floatRole := nonTypedRole.(float64)
+	role = int(floatRole)
+
 	if !foundId || !foundRole {
 		return 0, 0, ErrMissingTokenClaims
 	}
