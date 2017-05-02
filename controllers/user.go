@@ -129,7 +129,7 @@ func (c *UserController) Read(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, common.CreateError(err))
 	}
 
-	return ctx.JSON(http.StatusOK, &users)
+	return ctx.JSON(http.StatusOK, users)
 }
 
 func (c *UserController) ReadByID(ctx echo.Context) error {
@@ -152,13 +152,13 @@ func (c *UserController) ReadByID(ctx echo.Context) error {
 	}
 
 	user.Projects, err = c.UserDao.GetAllAssociatedProjects(user)
-	if err != nil {
+	/*if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, common.CreateError(err))
-	}
+	}*/
 	user.Risks, err = c.UserDao.GetAllAssociatedRisks(user)
-	if err != nil {
+	/*if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, common.CreateError(err))
-	}
+	}*/
 
 	return ctx.JSON(http.StatusOK, user)
 }
@@ -173,7 +173,7 @@ func (c *UserController) DeleteByID(ctx echo.Context) error {
 	if err != nil {
 		return ctx.JSON(http.StatusBadRequest, common.CreateError(err))
 	}
-	if role != models.RoleAdmin { // the >= condition is for possibility of adding new user roles
+	if role != models.RoleAdmin {
 		return ctx.JSON(http.StatusUnauthorized, common.CreateError(common.ErrUnsufficientPrivileges))
 	}
 

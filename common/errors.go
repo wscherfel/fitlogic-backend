@@ -11,6 +11,10 @@ var (
 	ErrUnsufficientPrivileges = errors.New("Logged user does not have sufficient privileges to do this operation.")
 
 	ErrIdInPathWrongFormat = errors.New("ID in path is not a valid ID")
+
+	ErrCannotCreateProjectForOthers = errors.New("Cannot create project with other user as project manager")
+
+	ErrUserIsNotManager = errors.New("User is not manager")
 )
 
 type Error struct {

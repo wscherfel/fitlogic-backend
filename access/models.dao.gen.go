@@ -189,53 +189,6 @@ func (mock *UserDAOMock) ExecuteCustomQueryT(query string) (*gorm.DB, error) {
 }
 
 
-// AddRisksAssociation will add
-// an association to model given by parameter
-func (dao *UserDAO) AddRisksAssociation(m *models.User, asocVal *models.Risk) (*models.User, error) {
-	if err := dao.db.Model(&m).Association("Risks").Append(asocVal).Error; err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
-
-// RemoveRisksAssociation will remove
-// an association from model given by parameter
-func (dao *UserDAO) RemoveRisksAssociation(m *models.User, asocVal *models.Risk) (*models.User, error) {
-	if err := dao.db.Model(&m).Association("Risks").Delete(asocVal).Error; err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
-
-// GetAllAssociatedRisks will get all
-// an association from model given by parameter
-func (dao *UserDAO) GetAllAssociatedRisks(m *models.User) ([]models.Risk, error) {
-	retVal := []models.Risk{}
-
-	if err := dao.db.Model(&m).Related(&retVal).Error; err != nil {
-		return nil, err
-	}
-	return retVal, nil
-}
-
-// AddRisksAssociation is a mock implementation of AddRisksAssociation method
-func (mock *UserDAOMock) AddRisksAssociation(m *models.User, asocVal *models.Risk) (*models.User, error) {
-	edit := mock.db[m.ID]
-	edit.Risks = append(edit.Risks, *asocVal)
-	edit.UpdatedAt = time.Now()
-	mock.db[m.ID] = edit
-
-	return &edit, nil
-}
-
-// GetAllAssociatedRisks is a mock implementation of GetAllAssociatedRisks method
-func (mock *UserDAOMock) GetAllAssociatedRisks(m *models.User) ([]models.Risk, error) {
-	return m.Risks, nil
-}
-
-
 // ReadByName will find all records
 // matching the value given by parameter
 func (dao *UserDAO) ReadByName(m string) ([]models.User, error) {
@@ -796,9 +749,7 @@ func (dao *UserDAO) RemoveProjectsAssociation(m *models.User, asocVal *models.Pr
 func (dao *UserDAO) GetAllAssociatedProjects(m *models.User) ([]models.Project, error) {
 	retVal := []models.Project{}
 
-	if err := dao.db.Model(&m).Related(&retVal).Error; err != nil {
-		return nil, err
-	}
+	dao.db.Model(&m).Association("Projects").Find(&retVal)
 	return retVal, nil
 }
 
@@ -812,10 +763,86 @@ func (mock *UserDAOMock) AddProjectsAssociation(m *models.User, asocVal *models.
 	return &edit, nil
 }
 
+// RemoveProjectsAssociation is a mock implementation of RemoveProjectsAssociation method
+func (mock *UserDAOMock) RemoveProjectsAssociation(m *models.User, asocVal *models.Project) (*models.User, error) {
+	a := m.Projects
+	m.UpdatedAt = time.Now()
+	deletedIndex := 0
+	for j, val := range a {
+		if val.ID == asocVal.ID {
+			deletedIndex = j
+		}
+	}
+	a[deletedIndex] = a[len(a)-1]
+	a = a[:len(a)-1]
+
+	return m, nil
+}
 
 // GetAllAssociatedProjects is a mock implementation of GetAllAssociatedProjects method
 func (mock *UserDAOMock) GetAllAssociatedProjects(m *models.User) ([]models.Project, error) {
 	return m.Projects, nil
+}
+
+
+// AddRisksAssociation will add
+// an association to model given by parameter
+func (dao *UserDAO) AddRisksAssociation(m *models.User, asocVal *models.Risk) (*models.User, error) {
+	if err := dao.db.Model(&m).Association("Risks").Append(asocVal).Error; err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+// RemoveRisksAssociation will remove
+// an association from model given by parameter
+func (dao *UserDAO) RemoveRisksAssociation(m *models.User, asocVal *models.Risk) (*models.User, error) {
+	if err := dao.db.Model(&m).Association("Risks").Delete(asocVal).Error; err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+// GetAllAssociatedRisks will get all
+// an association from model given by parameter
+func (dao *UserDAO) GetAllAssociatedRisks(m *models.User) ([]models.Risk, error) {
+	retVal := []models.Risk{}
+
+	dao.db.Model(&m).Association("Risks").Find(&retVal)
+	return retVal, nil
+}
+
+// AddRisksAssociation is a mock implementation of AddRisksAssociation method
+func (mock *UserDAOMock) AddRisksAssociation(m *models.User, asocVal *models.Risk) (*models.User, error) {
+	edit := mock.db[m.ID]
+	edit.Risks = append(edit.Risks, *asocVal)
+	edit.UpdatedAt = time.Now()
+	mock.db[m.ID] = edit
+
+	return &edit, nil
+}
+
+// RemoveRisksAssociation is a mock implementation of RemoveRisksAssociation method
+func (mock *UserDAOMock) RemoveRisksAssociation(m *models.User, asocVal *models.Risk) (*models.User, error) {
+	a := m.Risks
+	m.UpdatedAt = time.Now()
+	deletedIndex := 0
+	for j, val := range a {
+		if val.ID == asocVal.ID {
+			deletedIndex = j
+		}
+	}
+	a[deletedIndex] = a[len(a)-1]
+	a = a[:len(a)-1]
+
+	return m, nil
+}
+
+// GetAllAssociatedRisks is a mock implementation of GetAllAssociatedRisks method
+func (mock *UserDAOMock) GetAllAssociatedRisks(m *models.User) ([]models.Risk, error) {
+	return m.Risks, nil
 }
 
 
@@ -869,9 +896,6 @@ type UserDAOInterface interface {
 	 GetUpdatedAfter(timestamp time.Time) ([]models.User, error)
 	 GetAll() ([]models.User, error)
 	 ExecuteCustomQueryT(query string) (*gorm.DB, error)
-	 AddRisksAssociation(m *models.User, asocVal *models.Risk) (*models.User, error)
-	 RemoveRisksAssociation(m *models.User, asocVal *models.Risk) (*models.User, error)
-	 GetAllAssociatedRisks(m *models.User) ([]models.Risk, error)
 	 ReadByName(m string) ([]models.User, error)
 	 ReadByNameT(m string) (*gorm.DB, error)
 	 DeleteByName(m string) (error)
@@ -900,6 +924,9 @@ type UserDAOInterface interface {
 	 AddProjectsAssociation(m *models.User, asocVal *models.Project) (*models.User, error)
 	 RemoveProjectsAssociation(m *models.User, asocVal *models.Project) (*models.User, error)
 	 GetAllAssociatedProjects(m *models.User) ([]models.Project, error)
+	 AddRisksAssociation(m *models.User, asocVal *models.Risk) (*models.User, error)
+	 RemoveRisksAssociation(m *models.User, asocVal *models.Risk) (*models.User, error)
+	 GetAllAssociatedRisks(m *models.User) ([]models.Risk, error)
 	 ReadByID(id uint) (*models.User, error)
 }
 
@@ -1085,154 +1112,65 @@ func (mock *ProjectDAOMock) ExecuteCustomQueryT(query string) (*gorm.DB, error) 
 }
 
 
-// SetStart will set a Start property of a model
-// to value given by parameter
-func (dao *ProjectDAO) SetStart(m *models.Project, str time.Time) (*models.Project, error) {
-	m.Start = str
-	var err error
-	m, err = dao.Update(m, m.ID)
-	if err != nil {
+// AddRisksAssociation will add
+// an association to model given by parameter
+func (dao *ProjectDAO) AddRisksAssociation(m *models.Project, asocVal *models.Risk) (*models.Project, error) {
+	if err := dao.db.Model(&m).Association("Risks").Append(asocVal).Error; err != nil {
 		return nil, err
 	}
 
 	return m, nil
 }
 
-func (mock *ProjectDAOMock) SetStart(m *models.Project, str time.Time) (*models.Project, error) {
-	edit := mock.db[m.ID]
-	edit.Start = str
-
-	mock.db[m.ID] = edit
-	return &edit, nil
-}
-
-
-// SetEnd will set a End property of a model
-// to value given by parameter
-func (dao *ProjectDAO) SetEnd(m *models.Project, str time.Time) (*models.Project, error) {
-	m.End = str
-	var err error
-	m, err = dao.Update(m, m.ID)
-	if err != nil {
+// RemoveRisksAssociation will remove
+// an association from model given by parameter
+func (dao *ProjectDAO) RemoveRisksAssociation(m *models.Project, asocVal *models.Risk) (*models.Project, error) {
+	if err := dao.db.Model(&m).Association("Risks").Delete(asocVal).Error; err != nil {
 		return nil, err
 	}
 
 	return m, nil
 }
 
-func (mock *ProjectDAOMock) SetEnd(m *models.Project, str time.Time) (*models.Project, error) {
-	edit := mock.db[m.ID]
-	edit.End = str
+// GetAllAssociatedRisks will get all
+// an association from model given by parameter
+func (dao *ProjectDAO) GetAllAssociatedRisks(m *models.Project) ([]models.Risk, error) {
+	retVal := []models.Risk{}
 
-	mock.db[m.ID] = edit
-	return &edit, nil
-}
-
-
-// ReadByIsFinished will find all records
-// matching the value given by parameter
-func (dao *ProjectDAO) ReadByIsFinished(m bool) ([]models.Project, error) {
-	retVal := []models.Project{}
-	if err := dao.db.Where(&models.Project{IsFinished: m}).Find(&retVal).Error; err != nil {
-		return nil, err
-	}
+	dao.db.Model(m).Association("Risks").Find(&retVal)
 
 	return retVal, nil
 }
 
-// ReadByIsFinishedT will return a transaction that
-// can be used to find all models matching the value given by parameter
-func (dao *ProjectDAO) ReadByIsFinishedT(m bool) (*gorm.DB, error) {
-	retVal := dao.db.Where(&models.Project{IsFinished: m})
-
-	return retVal, retVal.Error
-}
-
-// DeleteByIsFinished deletes all records in database with
-// IsFinished the same as parameter given
-func (dao *ProjectDAO) DeleteByIsFinished(m bool) (error) {
-	if err := dao.db.Where(&models.Project{IsFinished: m}).Delete(&models.Project{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// EditByIsFinished will edit all records in database
-// with the same IsFinished as parameter given
-// using model given by parameter
-func (dao *ProjectDAO) EditByIsFinished(m bool, newVals *models.Project) (error) {
-	if err := dao.db.Table("projects").Where(&models.Project{IsFinished: m}).Updates(newVals).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// SetIsFinished will set IsFinished
-// to a value given by parameter
-func (dao *ProjectDAO) SetIsFinished(m *models.Project, newVal bool) (*models.Project, error) {
-	m.IsFinished = newVal
-	record, err := dao.ReadByID((m.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
-		return nil, err
-	}
-
-	return record, nil
-}
-
-// ReadByIsFinished is a mock implementation of ReadByIsFinished method
-func (mock *ProjectDAOMock) ReadByIsFinished(m bool) ([]models.Project, error) {
-	ret := make([]models.Project, 0, len(mock.db))
-	for _, val := range mock.db {
-		if val.IsFinished == m {
-			ret = append(ret, val)
-		}
-	}
-
-	return ret, nil
-}
-
-// ReadByIsFinishedT is a mock implementation of ReadByIsFinishedT method
-func (mock *ProjectDAOMock) ReadByIsFinishedT(m bool) (*gorm.DB, error) {
-	return nil, nil
-}
-
-// DeleteByIsFinished is a mock implementation of DeleteByIsFinished method
-func (mock *ProjectDAOMock) DeleteByIsFinished(m bool) (error) {
-	for _, val := range mock.db {
-		if val.IsFinished == m {
-			delete(mock.db, val.ID)
-		}
-	}
-
-	return nil
-}
-
-// EditByIsFinished is a mock implementation of EditByIsFinished method
-func (mock *ProjectDAOMock) EditByIsFinished(m bool, newVals *models.Project) (error) {
-	for _, val := range mock.db {
-		if val.IsFinished == m {
-			id := val.ID
-			val = *newVals
-			val.ID = id
-			val.UpdatedAt = time.Now()
-		}
-	}
-
-	return nil
-}
-
-// SetIsFinished is a mock implementation of SetIsFinished method
-func (mock *ProjectDAOMock) SetIsFinished(m *models.Project, newVal bool) (*models.Project, error) {
+// AddRisksAssociation is a mock implementation of AddRisksAssociation method
+func (mock *ProjectDAOMock) AddRisksAssociation(m *models.Project, asocVal *models.Risk) (*models.Project, error) {
 	edit := mock.db[m.ID]
-	edit.IsFinished = newVal
+	edit.Risks = append(edit.Risks, *asocVal)
 	edit.UpdatedAt = time.Now()
-
 	mock.db[m.ID] = edit
+
 	return &edit, nil
+}
+
+// RemoveRisksAssociation is a mock implementation of RemoveRisksAssociation method
+func (mock *ProjectDAOMock) RemoveRisksAssociation(m *models.Project, asocVal *models.Risk) (*models.Project, error) {
+	a := m.Risks
+	m.UpdatedAt = time.Now()
+	deletedIndex := 0
+	for j, val := range a {
+		if val.ID == asocVal.ID {
+			deletedIndex = j
+		}
+	}
+	a[deletedIndex] = a[len(a)-1]
+	a = a[:len(a)-1]
+
+	return m, nil
+}
+
+// GetAllAssociatedRisks is a mock implementation of GetAllAssociatedRisks method
+func (mock *ProjectDAOMock) GetAllAssociatedRisks(m *models.Project) ([]models.Risk, error) {
+	return m.Risks, nil
 }
 
 
@@ -1475,9 +1413,7 @@ func (dao *ProjectDAO) RemoveUsersAssociation(m *models.Project, asocVal *models
 func (dao *ProjectDAO) GetAllAssociatedUsers(m *models.Project) ([]models.User, error) {
 	retVal := []models.User{}
 
-	if err := dao.db.Model(&m).Related(&retVal).Error; err != nil {
-		return nil, err
-	}
+	dao.db.Model(&m).Association("Users").Find(&retVal)
 	return retVal, nil
 }
 
@@ -1491,6 +1427,21 @@ func (mock *ProjectDAOMock) AddUsersAssociation(m *models.Project, asocVal *mode
 	return &edit, nil
 }
 
+// RemoveUsersAssociation is a mock implementation of RemoveUsersAssociation method
+func (mock *ProjectDAOMock) RemoveUsersAssociation(m *models.Project, asocVal *models.User) (*models.Project, error) {
+	a := m.Users
+	m.UpdatedAt = time.Now()
+	deletedIndex := 0
+	for j, val := range a {
+		if val.ID == asocVal.ID {
+			deletedIndex = j
+		}
+	}
+	a[deletedIndex] = a[len(a)-1]
+	a = a[:len(a)-1]
+
+	return m, nil
+}
 
 // GetAllAssociatedUsers is a mock implementation of GetAllAssociatedUsers method
 func (mock *ProjectDAOMock) GetAllAssociatedUsers(m *models.Project) ([]models.User, error) {
@@ -1498,50 +1449,217 @@ func (mock *ProjectDAOMock) GetAllAssociatedUsers(m *models.Project) ([]models.U
 }
 
 
-// AddRisksAssociation will add
-// an association to model given by parameter
-func (dao *ProjectDAO) AddRisksAssociation(m *models.Project, asocVal *models.Risk) (*models.Project, error) {
-	if err := dao.db.Model(&m).Association("Risks").Append(asocVal).Error; err != nil {
+// ReadByIsFinished will find all records
+// matching the value given by parameter
+func (dao *ProjectDAO) ReadByIsFinished(m bool) ([]models.Project, error) {
+	retVal := []models.Project{}
+	if err := dao.db.Where(&models.Project{IsFinished: m}).Find(&retVal).Error; err != nil {
 		return nil, err
 	}
 
-	return m, nil
-}
-
-// RemoveRisksAssociation will remove
-// an association from model given by parameter
-func (dao *ProjectDAO) RemoveRisksAssociation(m *models.Project, asocVal *models.Risk) (*models.Project, error) {
-	if err := dao.db.Model(&m).Association("Risks").Delete(asocVal).Error; err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
-
-// GetAllAssociatedRisks will get all
-// an association from model given by parameter
-func (dao *ProjectDAO) GetAllAssociatedRisks(m *models.Project) ([]models.Risk, error) {
-	retVal := []models.Risk{}
-
-	if err := dao.db.Model(&m).Related(&retVal).Error; err != nil {
-		return nil, err
-	}
 	return retVal, nil
 }
 
-// AddRisksAssociation is a mock implementation of AddRisksAssociation method
-func (mock *ProjectDAOMock) AddRisksAssociation(m *models.Project, asocVal *models.Risk) (*models.Project, error) {
-	edit := mock.db[m.ID]
-	edit.Risks = append(edit.Risks, *asocVal)
-	edit.UpdatedAt = time.Now()
-	mock.db[m.ID] = edit
+// ReadByIsFinishedT will return a transaction that
+// can be used to find all models matching the value given by parameter
+func (dao *ProjectDAO) ReadByIsFinishedT(m bool) (*gorm.DB, error) {
+	retVal := dao.db.Where(&models.Project{IsFinished: m})
 
+	return retVal, retVal.Error
+}
+
+// DeleteByIsFinished deletes all records in database with
+// IsFinished the same as parameter given
+func (dao *ProjectDAO) DeleteByIsFinished(m bool) (error) {
+	if err := dao.db.Where(&models.Project{IsFinished: m}).Delete(&models.Project{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// EditByIsFinished will edit all records in database
+// with the same IsFinished as parameter given
+// using model given by parameter
+func (dao *ProjectDAO) EditByIsFinished(m bool, newVals *models.Project) (error) {
+	if err := dao.db.Table("projects").Where(&models.Project{IsFinished: m}).Updates(newVals).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetIsFinished will set IsFinished
+// to a value given by parameter
+func (dao *ProjectDAO) SetIsFinished(m *models.Project, newVal bool) (*models.Project, error) {
+	m.IsFinished = newVal
+	record, err := dao.ReadByID((m.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// ReadByIsFinished is a mock implementation of ReadByIsFinished method
+func (mock *ProjectDAOMock) ReadByIsFinished(m bool) ([]models.Project, error) {
+	ret := make([]models.Project, 0, len(mock.db))
+	for _, val := range mock.db {
+		if val.IsFinished == m {
+			ret = append(ret, val)
+		}
+	}
+
+	return ret, nil
+}
+
+// ReadByIsFinishedT is a mock implementation of ReadByIsFinishedT method
+func (mock *ProjectDAOMock) ReadByIsFinishedT(m bool) (*gorm.DB, error) {
+	return nil, nil
+}
+
+// DeleteByIsFinished is a mock implementation of DeleteByIsFinished method
+func (mock *ProjectDAOMock) DeleteByIsFinished(m bool) (error) {
+	for _, val := range mock.db {
+		if val.IsFinished == m {
+			delete(mock.db, val.ID)
+		}
+	}
+
+	return nil
+}
+
+// EditByIsFinished is a mock implementation of EditByIsFinished method
+func (mock *ProjectDAOMock) EditByIsFinished(m bool, newVals *models.Project) (error) {
+	for _, val := range mock.db {
+		if val.IsFinished == m {
+			id := val.ID
+			val = *newVals
+			val.ID = id
+			val.UpdatedAt = time.Now()
+		}
+	}
+
+	return nil
+}
+
+// SetIsFinished is a mock implementation of SetIsFinished method
+func (mock *ProjectDAOMock) SetIsFinished(m *models.Project, newVal bool) (*models.Project, error) {
+	edit := mock.db[m.ID]
+	edit.IsFinished = newVal
+	edit.UpdatedAt = time.Now()
+
+	mock.db[m.ID] = edit
 	return &edit, nil
 }
 
-// GetAllAssociatedRisks is a mock implementation of GetAllAssociatedRisks method
-func (mock *ProjectDAOMock) GetAllAssociatedRisks(m *models.Project) ([]models.Risk, error) {
-	return m.Risks, nil
+
+// ReadByManagerID will find all records
+// matching the value given by parameter
+func (dao *ProjectDAO) ReadByManagerID(m uint) ([]models.Project, error) {
+	retVal := []models.Project{}
+	if err := dao.db.Where(&models.Project{ManagerID: m}).Find(&retVal).Error; err != nil {
+		return nil, err
+	}
+
+	return retVal, nil
+}
+
+// ReadByManagerIDT will return a transaction that
+// can be used to find all models matching the value given by parameter
+func (dao *ProjectDAO) ReadByManagerIDT(m uint) (*gorm.DB, error) {
+	retVal := dao.db.Where(&models.Project{ManagerID: m})
+
+	return retVal, retVal.Error
+}
+
+// DeleteByManagerID deletes all records in database with
+// ManagerID the same as parameter given
+func (dao *ProjectDAO) DeleteByManagerID(m uint) (error) {
+	if err := dao.db.Where(&models.Project{ManagerID: m}).Delete(&models.Project{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// EditByManagerID will edit all records in database
+// with the same ManagerID as parameter given
+// using model given by parameter
+func (dao *ProjectDAO) EditByManagerID(m uint, newVals *models.Project) (error) {
+	if err := dao.db.Table("projects").Where(&models.Project{ManagerID: m}).Updates(newVals).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetManagerID will set ManagerID
+// to a value given by parameter
+func (dao *ProjectDAO) SetManagerID(m *models.Project, newVal uint) (*models.Project, error) {
+	m.ManagerID = newVal
+	record, err := dao.ReadByID((m.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// ReadByManagerID is a mock implementation of ReadByManagerID method
+func (mock *ProjectDAOMock) ReadByManagerID(m uint) ([]models.Project, error) {
+	ret := make([]models.Project, 0, len(mock.db))
+	for _, val := range mock.db {
+		if val.ManagerID == m {
+			ret = append(ret, val)
+		}
+	}
+
+	return ret, nil
+}
+
+// ReadByManagerIDT is a mock implementation of ReadByManagerIDT method
+func (mock *ProjectDAOMock) ReadByManagerIDT(m uint) (*gorm.DB, error) {
+	return nil, nil
+}
+
+// DeleteByManagerID is a mock implementation of DeleteByManagerID method
+func (mock *ProjectDAOMock) DeleteByManagerID(m uint) (error) {
+	for _, val := range mock.db {
+		if val.ManagerID == m {
+			delete(mock.db, val.ID)
+		}
+	}
+
+	return nil
+}
+
+// EditByManagerID is a mock implementation of EditByManagerID method
+func (mock *ProjectDAOMock) EditByManagerID(m uint, newVals *models.Project) (error) {
+	for _, val := range mock.db {
+		if val.ManagerID == m {
+			id := val.ID
+			val = *newVals
+			val.ID = id
+			val.UpdatedAt = time.Now()
+		}
+	}
+
+	return nil
+}
+
+// SetManagerID is a mock implementation of SetManagerID method
+func (mock *ProjectDAOMock) SetManagerID(m *models.Project, newVal uint) (*models.Project, error) {
+	edit := mock.db[m.ID]
+	edit.ManagerID = newVal
+	edit.UpdatedAt = time.Now()
+
+	mock.db[m.ID] = edit
+	return &edit, nil
 }
 
 
@@ -1595,13 +1713,10 @@ type ProjectDAOInterface interface {
 	 GetUpdatedAfter(timestamp time.Time) ([]models.Project, error)
 	 GetAll() ([]models.Project, error)
 	 ExecuteCustomQueryT(query string) (*gorm.DB, error)
-	 SetStart(m *models.Project, str time.Time) (*models.Project, error)
 	 SetEnd(m *models.Project, str time.Time) (*models.Project, error)
-	 ReadByIsFinished(m bool) ([]models.Project, error)
-	 ReadByIsFinishedT(m bool) (*gorm.DB, error)
-	 DeleteByIsFinished(m bool) (error)
-	 EditByIsFinished(m bool, newVals *models.Project) (error)
-	 SetIsFinished(m *models.Project, newVal bool) (*models.Project, error)
+	 AddRisksAssociation(m *models.Project, asocVal *models.Risk) (*models.Project, error)
+	 RemoveRisksAssociation(m *models.Project, asocVal *models.Risk) (*models.Project, error)
+	 GetAllAssociatedRisks(m *models.Project) ([]models.Risk, error)
 	 ReadByName(m string) ([]models.Project, error)
 	 ReadByNameT(m string) (*gorm.DB, error)
 	 DeleteByName(m string) (error)
@@ -1615,9 +1730,17 @@ type ProjectDAOInterface interface {
 	 AddUsersAssociation(m *models.Project, asocVal *models.User) (*models.Project, error)
 	 RemoveUsersAssociation(m *models.Project, asocVal *models.User) (*models.Project, error)
 	 GetAllAssociatedUsers(m *models.Project) ([]models.User, error)
-	 AddRisksAssociation(m *models.Project, asocVal *models.Risk) (*models.Project, error)
-	 RemoveRisksAssociation(m *models.Project, asocVal *models.Risk) (*models.Project, error)
-	 GetAllAssociatedRisks(m *models.Project) ([]models.Risk, error)
+	 SetStart(m *models.Project, str time.Time) (*models.Project, error)
+	 ReadByIsFinished(m bool) ([]models.Project, error)
+	 ReadByIsFinishedT(m bool) (*gorm.DB, error)
+	 DeleteByIsFinished(m bool) (error)
+	 EditByIsFinished(m bool, newVals *models.Project) (error)
+	 SetIsFinished(m *models.Project, newVal bool) (*models.Project, error)
+	 ReadByManagerID(m uint) ([]models.Project, error)
+	 ReadByManagerIDT(m uint) (*gorm.DB, error)
+	 DeleteByManagerID(m uint) (error)
+	 EditByManagerID(m uint, newVals *models.Project) (error)
+	 SetManagerID(m *models.Project, newVal uint) (*models.Project, error)
 	 ReadByID(id uint) (*models.Project, error)
 }
 
@@ -1803,6 +1926,281 @@ func (mock *RiskDAOMock) ExecuteCustomQueryT(query string) (*gorm.DB, error) {
 }
 
 
+
+// ReadByTrigger will find all records
+// matching the value given by parameter
+func (dao *RiskDAO) ReadByTrigger(m string) ([]models.Risk, error) {
+	retVal := []models.Risk{}
+	if err := dao.db.Where(&models.Risk{Trigger: m}).Find(&retVal).Error; err != nil {
+		return nil, err
+	}
+
+	return retVal, nil
+}
+
+// ReadByTriggerT will return a transaction that
+// can be used to find all models matching the value given by parameter
+func (dao *RiskDAO) ReadByTriggerT(m string) (*gorm.DB, error) {
+	retVal := dao.db.Where(&models.Risk{Trigger: m})
+
+	return retVal, retVal.Error
+}
+
+// DeleteByTrigger deletes all records in database with
+// Trigger the same as parameter given
+func (dao *RiskDAO) DeleteByTrigger(m string) (error) {
+	if err := dao.db.Where(&models.Risk{Trigger: m}).Delete(&models.Risk{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// EditByTrigger will edit all records in database
+// with the same Trigger as parameter given
+// using model given by parameter
+func (dao *RiskDAO) EditByTrigger(m string, newVals *models.Risk) (error) {
+	if err := dao.db.Table("risks").Where(&models.Risk{Trigger: m}).Updates(newVals).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetTrigger will set Trigger
+// to a value given by parameter
+func (dao *RiskDAO) SetTrigger(m *models.Risk, newVal string) (*models.Risk, error) {
+	m.Trigger = newVal
+	record, err := dao.ReadByID((m.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// ReadByTrigger is a mock implementation of ReadByTrigger method
+func (mock *RiskDAOMock) ReadByTrigger(m string) ([]models.Risk, error) {
+	ret := make([]models.Risk, 0, len(mock.db))
+	for _, val := range mock.db {
+		if val.Trigger == m {
+			ret = append(ret, val)
+		}
+	}
+
+	return ret, nil
+}
+
+// ReadByTriggerT is a mock implementation of ReadByTriggerT method
+func (mock *RiskDAOMock) ReadByTriggerT(m string) (*gorm.DB, error) {
+	return nil, nil
+}
+
+// DeleteByTrigger is a mock implementation of DeleteByTrigger method
+func (mock *RiskDAOMock) DeleteByTrigger(m string) (error) {
+	for _, val := range mock.db {
+		if val.Trigger == m {
+			delete(mock.db, val.ID)
+		}
+	}
+
+	return nil
+}
+
+// EditByTrigger is a mock implementation of EditByTrigger method
+func (mock *RiskDAOMock) EditByTrigger(m string, newVals *models.Risk) (error) {
+	for _, val := range mock.db {
+		if val.Trigger == m {
+			id := val.ID
+			val = *newVals
+			val.ID = id
+			val.UpdatedAt = time.Now()
+		}
+	}
+
+	return nil
+}
+
+// SetTrigger is a mock implementation of SetTrigger method
+func (mock *RiskDAOMock) SetTrigger(m *models.Risk, newVal string) (*models.Risk, error) {
+	edit := mock.db[m.ID]
+	edit.Trigger = newVal
+	edit.UpdatedAt = time.Now()
+
+	mock.db[m.ID] = edit
+	return &edit, nil
+}
+
+
+// ReadByImpact will find all records
+// matching the value given by parameter
+func (dao *RiskDAO) ReadByImpact(m float64) ([]models.Risk, error) {
+	retVal := []models.Risk{}
+	if err := dao.db.Where(&models.Risk{Impact: m}).Find(&retVal).Error; err != nil {
+		return nil, err
+	}
+
+	return retVal, nil
+}
+
+// ReadByImpactT will return a transaction that
+// can be used to find all models matching the value given by parameter
+func (dao *RiskDAO) ReadByImpactT(m float64) (*gorm.DB, error) {
+	retVal := dao.db.Where(&models.Risk{Impact: m})
+
+	return retVal, retVal.Error
+}
+
+// DeleteByImpact deletes all records in database with
+// Impact the same as parameter given
+func (dao *RiskDAO) DeleteByImpact(m float64) (error) {
+	if err := dao.db.Where(&models.Risk{Impact: m}).Delete(&models.Risk{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// EditByImpact will edit all records in database
+// with the same Impact as parameter given
+// using model given by parameter
+func (dao *RiskDAO) EditByImpact(m float64, newVals *models.Risk) (error) {
+	if err := dao.db.Table("risks").Where(&models.Risk{Impact: m}).Updates(newVals).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetImpact will set Impact
+// to a value given by parameter
+func (dao *RiskDAO) SetImpact(m *models.Risk, newVal float64) (*models.Risk, error) {
+	m.Impact = newVal
+	record, err := dao.ReadByID((m.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// ReadByImpact is a mock implementation of ReadByImpact method
+func (mock *RiskDAOMock) ReadByImpact(m float64) ([]models.Risk, error) {
+	ret := make([]models.Risk, 0, len(mock.db))
+	for _, val := range mock.db {
+		if val.Impact == m {
+			ret = append(ret, val)
+		}
+	}
+
+	return ret, nil
+}
+
+// ReadByImpactT is a mock implementation of ReadByImpactT method
+func (mock *RiskDAOMock) ReadByImpactT(m float64) (*gorm.DB, error) {
+	return nil, nil
+}
+
+// DeleteByImpact is a mock implementation of DeleteByImpact method
+func (mock *RiskDAOMock) DeleteByImpact(m float64) (error) {
+	for _, val := range mock.db {
+		if val.Impact == m {
+			delete(mock.db, val.ID)
+		}
+	}
+
+	return nil
+}
+
+// EditByImpact is a mock implementation of EditByImpact method
+func (mock *RiskDAOMock) EditByImpact(m float64, newVals *models.Risk) (error) {
+	for _, val := range mock.db {
+		if val.Impact == m {
+			id := val.ID
+			val = *newVals
+			val.ID = id
+			val.UpdatedAt = time.Now()
+		}
+	}
+
+	return nil
+}
+
+// SetImpact is a mock implementation of SetImpact method
+func (mock *RiskDAOMock) SetImpact(m *models.Risk, newVal float64) (*models.Risk, error) {
+	edit := mock.db[m.ID]
+	edit.Impact = newVal
+	edit.UpdatedAt = time.Now()
+
+	mock.db[m.ID] = edit
+	return &edit, nil
+}
+
+// AddProjectsAssociation will add
+// an association to model given by parameter
+func (dao *RiskDAO) AddProjectsAssociation(m *models.Risk, asocVal *models.Project) (*models.Risk, error) {
+	if err := dao.db.Model(&m).Association("Projects").Append(asocVal).Error; err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+// RemoveProjectsAssociation will remove
+// an association from model given by parameter
+func (dao *RiskDAO) RemoveProjectsAssociation(m *models.Risk, asocVal *models.Project) (*models.Risk, error) {
+	if err := dao.db.Model(&m).Association("Projects").Delete(asocVal).Error; err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+// GetAllAssociatedProjects will get all
+// an association from model given by parameter
+func (dao *RiskDAO) GetAllAssociatedProjects(m *models.Risk) ([]models.Project, error) {
+	retVal := []models.Project{}
+
+	dao.db.Model(&m).Association("Projects").Find(&retVal)
+	return retVal, nil
+}
+
+// AddProjectsAssociation is a mock implementation of AddProjectsAssociation method
+func (mock *RiskDAOMock) AddProjectsAssociation(m *models.Risk, asocVal *models.Project) (*models.Risk, error) {
+	edit := mock.db[m.ID]
+	edit.Projects = append(edit.Projects, *asocVal)
+	edit.UpdatedAt = time.Now()
+	mock.db[m.ID] = edit
+
+	return &edit, nil
+}
+
+// RemoveProjectsAssociation is a mock implementation of RemoveProjectsAssociation method
+func (mock *RiskDAOMock) RemoveProjectsAssociation(m *models.Risk, asocVal *models.Project) (*models.Risk, error) {
+	a := m.Projects
+	m.UpdatedAt = time.Now()
+	deletedIndex := 0
+	for j, val := range a {
+		if val.ID == asocVal.ID {
+			deletedIndex = j
+		}
+	}
+	a[deletedIndex] = a[len(a)-1]
+	a = a[:len(a)-1]
+
+	return m, nil
+}
+
+// GetAllAssociatedProjects is a mock implementation of GetAllAssociatedProjects method
+func (mock *RiskDAOMock) GetAllAssociatedProjects(m *models.Risk) ([]models.Project, error) {
+	return m.Projects, nil
+}
+
+
 // ReadByProbability will find all records
 // matching the value given by parameter
 func (dao *RiskDAO) ReadByProbability(m float64) ([]models.Risk, error) {
@@ -1910,48 +2308,48 @@ func (mock *RiskDAOMock) SetProbability(m *models.Risk, newVal float64) (*models
 }
 
 
-// ReadByName will find all records
+// ReadByCategory will find all records
 // matching the value given by parameter
-func (dao *RiskDAO) ReadByName(m string) ([]models.Risk, error) {
+func (dao *RiskDAO) ReadByCategory(m string) ([]models.Risk, error) {
 	retVal := []models.Risk{}
-	if err := dao.db.Where(&models.Risk{Name: m}).Find(&retVal).Error; err != nil {
+	if err := dao.db.Where(&models.Risk{Category: m}).Find(&retVal).Error; err != nil {
 		return nil, err
 	}
 
 	return retVal, nil
 }
 
-// ReadByNameT will return a transaction that
+// ReadByCategoryT will return a transaction that
 // can be used to find all models matching the value given by parameter
-func (dao *RiskDAO) ReadByNameT(m string) (*gorm.DB, error) {
-	retVal := dao.db.Where(&models.Risk{Name: m})
+func (dao *RiskDAO) ReadByCategoryT(m string) (*gorm.DB, error) {
+	retVal := dao.db.Where(&models.Risk{Category: m})
 
 	return retVal, retVal.Error
 }
 
-// DeleteByName deletes all records in database with
-// Name the same as parameter given
-func (dao *RiskDAO) DeleteByName(m string) (error) {
-	if err := dao.db.Where(&models.Risk{Name: m}).Delete(&models.Risk{}).Error; err != nil {
+// DeleteByCategory deletes all records in database with
+// Category the same as parameter given
+func (dao *RiskDAO) DeleteByCategory(m string) (error) {
+	if err := dao.db.Where(&models.Risk{Category: m}).Delete(&models.Risk{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-// EditByName will edit all records in database
-// with the same Name as parameter given
+// EditByCategory will edit all records in database
+// with the same Category as parameter given
 // using model given by parameter
-func (dao *RiskDAO) EditByName(m string, newVals *models.Risk) (error) {
-	if err := dao.db.Table("risks").Where(&models.Risk{Name: m}).Updates(newVals).Error; err != nil {
+func (dao *RiskDAO) EditByCategory(m string, newVals *models.Risk) (error) {
+	if err := dao.db.Table("risks").Where(&models.Risk{Category: m}).Updates(newVals).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-// SetName will set Name
+// SetCategory will set Category
 // to a value given by parameter
-func (dao *RiskDAO) SetName(m *models.Risk, newVal string) (*models.Risk, error) {
-	m.Name = newVal
+func (dao *RiskDAO) SetCategory(m *models.Risk, newVal string) (*models.Risk, error) {
+	m.Category = newVal
 	record, err := dao.ReadByID((m.ID))
 	if err != nil {
 		return nil, err
@@ -1964,11 +2362,11 @@ func (dao *RiskDAO) SetName(m *models.Risk, newVal string) (*models.Risk, error)
 	return record, nil
 }
 
-// ReadByName is a mock implementation of ReadByName method
-func (mock *RiskDAOMock) ReadByName(m string) ([]models.Risk, error) {
+// ReadByCategory is a mock implementation of ReadByCategory method
+func (mock *RiskDAOMock) ReadByCategory(m string) ([]models.Risk, error) {
 	ret := make([]models.Risk, 0, len(mock.db))
 	for _, val := range mock.db {
-		if val.Name == m {
+		if val.Category == m {
 			ret = append(ret, val)
 		}
 	}
@@ -1976,15 +2374,15 @@ func (mock *RiskDAOMock) ReadByName(m string) ([]models.Risk, error) {
 	return ret, nil
 }
 
-// ReadByNameT is a mock implementation of ReadByNameT method
-func (mock *RiskDAOMock) ReadByNameT(m string) (*gorm.DB, error) {
+// ReadByCategoryT is a mock implementation of ReadByCategoryT method
+func (mock *RiskDAOMock) ReadByCategoryT(m string) (*gorm.DB, error) {
 	return nil, nil
 }
 
-// DeleteByName is a mock implementation of DeleteByName method
-func (mock *RiskDAOMock) DeleteByName(m string) (error) {
+// DeleteByCategory is a mock implementation of DeleteByCategory method
+func (mock *RiskDAOMock) DeleteByCategory(m string) (error) {
 	for _, val := range mock.db {
-		if val.Name == m {
+		if val.Category == m {
 			delete(mock.db, val.ID)
 		}
 	}
@@ -1992,10 +2390,10 @@ func (mock *RiskDAOMock) DeleteByName(m string) (error) {
 	return nil
 }
 
-// EditByName is a mock implementation of EditByName method
-func (mock *RiskDAOMock) EditByName(m string, newVals *models.Risk) (error) {
+// EditByCategory is a mock implementation of EditByCategory method
+func (mock *RiskDAOMock) EditByCategory(m string, newVals *models.Risk) (error) {
 	for _, val := range mock.db {
-		if val.Name == m {
+		if val.Category == m {
 			id := val.ID
 			val = *newVals
 			val.ID = id
@@ -2006,10 +2404,499 @@ func (mock *RiskDAOMock) EditByName(m string, newVals *models.Risk) (error) {
 	return nil
 }
 
-// SetName is a mock implementation of SetName method
-func (mock *RiskDAOMock) SetName(m *models.Risk, newVal string) (*models.Risk, error) {
+// SetCategory is a mock implementation of SetCategory method
+func (mock *RiskDAOMock) SetCategory(m *models.Risk, newVal string) (*models.Risk, error) {
 	edit := mock.db[m.ID]
-	edit.Name = newVal
+	edit.Category = newVal
+	edit.UpdatedAt = time.Now()
+
+	mock.db[m.ID] = edit
+	return &edit, nil
+}
+
+
+// ReadByStatus will find all records
+// matching the value given by parameter
+func (dao *RiskDAO) ReadByStatus(m string) ([]models.Risk, error) {
+	retVal := []models.Risk{}
+	if err := dao.db.Where(&models.Risk{Status: m}).Find(&retVal).Error; err != nil {
+		return nil, err
+	}
+
+	return retVal, nil
+}
+
+// ReadByStatusT will return a transaction that
+// can be used to find all models matching the value given by parameter
+func (dao *RiskDAO) ReadByStatusT(m string) (*gorm.DB, error) {
+	retVal := dao.db.Where(&models.Risk{Status: m})
+
+	return retVal, retVal.Error
+}
+
+// DeleteByStatus deletes all records in database with
+// Status the same as parameter given
+func (dao *RiskDAO) DeleteByStatus(m string) (error) {
+	if err := dao.db.Where(&models.Risk{Status: m}).Delete(&models.Risk{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// EditByStatus will edit all records in database
+// with the same Status as parameter given
+// using model given by parameter
+func (dao *RiskDAO) EditByStatus(m string, newVals *models.Risk) (error) {
+	if err := dao.db.Table("risks").Where(&models.Risk{Status: m}).Updates(newVals).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetStatus will set Status
+// to a value given by parameter
+func (dao *RiskDAO) SetStatus(m *models.Risk, newVal string) (*models.Risk, error) {
+	m.Status = newVal
+	record, err := dao.ReadByID((m.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// ReadByStatus is a mock implementation of ReadByStatus method
+func (mock *RiskDAOMock) ReadByStatus(m string) ([]models.Risk, error) {
+	ret := make([]models.Risk, 0, len(mock.db))
+	for _, val := range mock.db {
+		if val.Status == m {
+			ret = append(ret, val)
+		}
+	}
+
+	return ret, nil
+}
+
+// ReadByStatusT is a mock implementation of ReadByStatusT method
+func (mock *RiskDAOMock) ReadByStatusT(m string) (*gorm.DB, error) {
+	return nil, nil
+}
+
+// DeleteByStatus is a mock implementation of DeleteByStatus method
+func (mock *RiskDAOMock) DeleteByStatus(m string) (error) {
+	for _, val := range mock.db {
+		if val.Status == m {
+			delete(mock.db, val.ID)
+		}
+	}
+
+	return nil
+}
+
+// EditByStatus is a mock implementation of EditByStatus method
+func (mock *RiskDAOMock) EditByStatus(m string, newVals *models.Risk) (error) {
+	for _, val := range mock.db {
+		if val.Status == m {
+			id := val.ID
+			val = *newVals
+			val.ID = id
+			val.UpdatedAt = time.Now()
+		}
+	}
+
+	return nil
+}
+
+// SetStatus is a mock implementation of SetStatus method
+func (mock *RiskDAOMock) SetStatus(m *models.Risk, newVal string) (*models.Risk, error) {
+	edit := mock.db[m.ID]
+	edit.Status = newVal
+	edit.UpdatedAt = time.Now()
+
+	mock.db[m.ID] = edit
+	return &edit, nil
+}
+
+
+// ReadByDescription will find all records
+// matching the value given by parameter
+func (dao *RiskDAO) ReadByDescription(m string) ([]models.Risk, error) {
+	retVal := []models.Risk{}
+	if err := dao.db.Where(&models.Risk{Description: m}).Find(&retVal).Error; err != nil {
+		return nil, err
+	}
+
+	return retVal, nil
+}
+
+// ReadByDescriptionT will return a transaction that
+// can be used to find all models matching the value given by parameter
+func (dao *RiskDAO) ReadByDescriptionT(m string) (*gorm.DB, error) {
+	retVal := dao.db.Where(&models.Risk{Description: m})
+
+	return retVal, retVal.Error
+}
+
+// DeleteByDescription deletes all records in database with
+// Description the same as parameter given
+func (dao *RiskDAO) DeleteByDescription(m string) (error) {
+	if err := dao.db.Where(&models.Risk{Description: m}).Delete(&models.Risk{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// EditByDescription will edit all records in database
+// with the same Description as parameter given
+// using model given by parameter
+func (dao *RiskDAO) EditByDescription(m string, newVals *models.Risk) (error) {
+	if err := dao.db.Table("risks").Where(&models.Risk{Description: m}).Updates(newVals).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetDescription will set Description
+// to a value given by parameter
+func (dao *RiskDAO) SetDescription(m *models.Risk, newVal string) (*models.Risk, error) {
+	m.Description = newVal
+	record, err := dao.ReadByID((m.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// ReadByDescription is a mock implementation of ReadByDescription method
+func (mock *RiskDAOMock) ReadByDescription(m string) ([]models.Risk, error) {
+	ret := make([]models.Risk, 0, len(mock.db))
+	for _, val := range mock.db {
+		if val.Description == m {
+			ret = append(ret, val)
+		}
+	}
+
+	return ret, nil
+}
+
+// ReadByDescriptionT is a mock implementation of ReadByDescriptionT method
+func (mock *RiskDAOMock) ReadByDescriptionT(m string) (*gorm.DB, error) {
+	return nil, nil
+}
+
+// DeleteByDescription is a mock implementation of DeleteByDescription method
+func (mock *RiskDAOMock) DeleteByDescription(m string) (error) {
+	for _, val := range mock.db {
+		if val.Description == m {
+			delete(mock.db, val.ID)
+		}
+	}
+
+	return nil
+}
+
+// EditByDescription is a mock implementation of EditByDescription method
+func (mock *RiskDAOMock) EditByDescription(m string, newVals *models.Risk) (error) {
+	for _, val := range mock.db {
+		if val.Description == m {
+			id := val.ID
+			val = *newVals
+			val.ID = id
+			val.UpdatedAt = time.Now()
+		}
+	}
+
+	return nil
+}
+
+// SetDescription is a mock implementation of SetDescription method
+func (mock *RiskDAOMock) SetDescription(m *models.Risk, newVal string) (*models.Risk, error) {
+	edit := mock.db[m.ID]
+	edit.Description = newVal
+	edit.UpdatedAt = time.Now()
+
+	mock.db[m.ID] = edit
+	return &edit, nil
+}
+
+
+// AddCounterMeasuresAssociation will add
+// an association to model given by parameter
+func (dao *RiskDAO) AddCounterMeasuresAssociation(m *models.Risk, asocVal *models.CounterMeasure) (*models.Risk, error) {
+	if err := dao.db.Model(&m).Association("CounterMeasures").Append(asocVal).Error; err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+// RemoveCounterMeasuresAssociation will remove
+// an association from model given by parameter
+func (dao *RiskDAO) RemoveCounterMeasuresAssociation(m *models.Risk, asocVal *models.CounterMeasure) (*models.Risk, error) {
+	if err := dao.db.Model(&m).Association("CounterMeasures").Delete(asocVal).Error; err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+// GetAllAssociatedCounterMeasures will get all
+// an association from model given by parameter
+func (dao *RiskDAO) GetAllAssociatedCounterMeasures(m *models.Risk) ([]models.CounterMeasure, error) {
+	retVal := []models.CounterMeasure{}
+
+	dao.db.Model(&m).Association("CounterMeasures").Find(&retVal)
+	return retVal, nil
+}
+
+// AddCounterMeasuresAssociation is a mock implementation of AddCounterMeasuresAssociation method
+func (mock *RiskDAOMock) AddCounterMeasuresAssociation(m *models.Risk, asocVal *models.CounterMeasure) (*models.Risk, error) {
+	edit := mock.db[m.ID]
+	edit.CounterMeasures = append(edit.CounterMeasures, *asocVal)
+	edit.UpdatedAt = time.Now()
+	mock.db[m.ID] = edit
+
+	return &edit, nil
+}
+
+// RemoveCounterMeasuresAssociation is a mock implementation of RemoveCounterMeasuresAssociation method
+func (mock *RiskDAOMock) RemoveCounterMeasuresAssociation(m *models.Risk, asocVal *models.CounterMeasure) (*models.Risk, error) {
+	a := m.CounterMeasures
+	m.UpdatedAt = time.Now()
+	deletedIndex := 0
+	for j, val := range a {
+		if val.ID == asocVal.ID {
+			deletedIndex = j
+		}
+	}
+	a[deletedIndex] = a[len(a)-1]
+	a = a[:len(a)-1]
+
+	return m, nil
+}
+
+// GetAllAssociatedCounterMeasures is a mock implementation of GetAllAssociatedCounterMeasures method
+func (mock *RiskDAOMock) GetAllAssociatedCounterMeasures(m *models.Risk) ([]models.CounterMeasure, error) {
+	return m.CounterMeasures, nil
+}
+
+
+// ReadByValue will find all records
+// matching the value given by parameter
+func (dao *RiskDAO) ReadByValue(m float64) ([]models.Risk, error) {
+	retVal := []models.Risk{}
+	if err := dao.db.Where(&models.Risk{Value: m}).Find(&retVal).Error; err != nil {
+		return nil, err
+	}
+
+	return retVal, nil
+}
+
+// ReadByValueT will return a transaction that
+// can be used to find all models matching the value given by parameter
+func (dao *RiskDAO) ReadByValueT(m float64) (*gorm.DB, error) {
+	retVal := dao.db.Where(&models.Risk{Value: m})
+
+	return retVal, retVal.Error
+}
+
+// DeleteByValue deletes all records in database with
+// Value the same as parameter given
+func (dao *RiskDAO) DeleteByValue(m float64) (error) {
+	if err := dao.db.Where(&models.Risk{Value: m}).Delete(&models.Risk{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// EditByValue will edit all records in database
+// with the same Value as parameter given
+// using model given by parameter
+func (dao *RiskDAO) EditByValue(m float64, newVals *models.Risk) (error) {
+	if err := dao.db.Table("risks").Where(&models.Risk{Value: m}).Updates(newVals).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetValue will set Value
+// to a value given by parameter
+func (dao *RiskDAO) SetValue(m *models.Risk, newVal float64) (*models.Risk, error) {
+	m.Value = newVal
+	record, err := dao.ReadByID((m.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// ReadByValue is a mock implementation of ReadByValue method
+func (mock *RiskDAOMock) ReadByValue(m float64) ([]models.Risk, error) {
+	ret := make([]models.Risk, 0, len(mock.db))
+	for _, val := range mock.db {
+		if val.Value == m {
+			ret = append(ret, val)
+		}
+	}
+
+	return ret, nil
+}
+
+// ReadByValueT is a mock implementation of ReadByValueT method
+func (mock *RiskDAOMock) ReadByValueT(m float64) (*gorm.DB, error) {
+	return nil, nil
+}
+
+// DeleteByValue is a mock implementation of DeleteByValue method
+func (mock *RiskDAOMock) DeleteByValue(m float64) (error) {
+	for _, val := range mock.db {
+		if val.Value == m {
+			delete(mock.db, val.ID)
+		}
+	}
+
+	return nil
+}
+
+// EditByValue is a mock implementation of EditByValue method
+func (mock *RiskDAOMock) EditByValue(m float64, newVals *models.Risk) (error) {
+	for _, val := range mock.db {
+		if val.Value == m {
+			id := val.ID
+			val = *newVals
+			val.ID = id
+			val.UpdatedAt = time.Now()
+		}
+	}
+
+	return nil
+}
+
+// SetValue is a mock implementation of SetValue method
+func (mock *RiskDAOMock) SetValue(m *models.Risk, newVal float64) (*models.Risk, error) {
+	edit := mock.db[m.ID]
+	edit.Value = newVal
+	edit.UpdatedAt = time.Now()
+
+	mock.db[m.ID] = edit
+	return &edit, nil
+}
+
+
+// ReadByRisk will find all records
+// matching the value given by parameter
+func (dao *RiskDAO) ReadByRisk(m float64) ([]models.Risk, error) {
+	retVal := []models.Risk{}
+	if err := dao.db.Where(&models.Risk{Risk: m}).Find(&retVal).Error; err != nil {
+		return nil, err
+	}
+
+	return retVal, nil
+}
+
+// ReadByRiskT will return a transaction that
+// can be used to find all models matching the value given by parameter
+func (dao *RiskDAO) ReadByRiskT(m float64) (*gorm.DB, error) {
+	retVal := dao.db.Where(&models.Risk{Risk: m})
+
+	return retVal, retVal.Error
+}
+
+// DeleteByRisk deletes all records in database with
+// Risk the same as parameter given
+func (dao *RiskDAO) DeleteByRisk(m float64) (error) {
+	if err := dao.db.Where(&models.Risk{Risk: m}).Delete(&models.Risk{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// EditByRisk will edit all records in database
+// with the same Risk as parameter given
+// using model given by parameter
+func (dao *RiskDAO) EditByRisk(m float64, newVals *models.Risk) (error) {
+	if err := dao.db.Table("risks").Where(&models.Risk{Risk: m}).Updates(newVals).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetRisk will set Risk
+// to a value given by parameter
+func (dao *RiskDAO) SetRisk(m *models.Risk, newVal float64) (*models.Risk, error) {
+	m.Risk = newVal
+	record, err := dao.ReadByID((m.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// ReadByRisk is a mock implementation of ReadByRisk method
+func (mock *RiskDAOMock) ReadByRisk(m float64) ([]models.Risk, error) {
+	ret := make([]models.Risk, 0, len(mock.db))
+	for _, val := range mock.db {
+		if val.Risk == m {
+			ret = append(ret, val)
+		}
+	}
+
+	return ret, nil
+}
+
+// ReadByRiskT is a mock implementation of ReadByRiskT method
+func (mock *RiskDAOMock) ReadByRiskT(m float64) (*gorm.DB, error) {
+	return nil, nil
+}
+
+// DeleteByRisk is a mock implementation of DeleteByRisk method
+func (mock *RiskDAOMock) DeleteByRisk(m float64) (error) {
+	for _, val := range mock.db {
+		if val.Risk == m {
+			delete(mock.db, val.ID)
+		}
+	}
+
+	return nil
+}
+
+// EditByRisk is a mock implementation of EditByRisk method
+func (mock *RiskDAOMock) EditByRisk(m float64, newVals *models.Risk) (error) {
+	for _, val := range mock.db {
+		if val.Risk == m {
+			id := val.ID
+			val = *newVals
+			val.ID = id
+			val.UpdatedAt = time.Now()
+		}
+	}
+
+	return nil
+}
+
+// SetRisk is a mock implementation of SetRisk method
+func (mock *RiskDAOMock) SetRisk(m *models.Risk, newVal float64) (*models.Risk, error) {
+	edit := mock.db[m.ID]
+	edit.Risk = newVal
 	edit.UpdatedAt = time.Now()
 
 	mock.db[m.ID] = edit
@@ -2019,7 +2906,7 @@ func (mock *RiskDAOMock) SetName(m *models.Risk, newVal string) (*models.Risk, e
 
 // ReadByUserID will find all records
 // matching the value given by parameter
-func (dao *RiskDAO) ReadByUserID(m int) ([]models.Risk, error) {
+func (dao *RiskDAO) ReadByUserID(m uint) ([]models.Risk, error) {
 	retVal := []models.Risk{}
 	if err := dao.db.Where(&models.Risk{UserID: m}).Find(&retVal).Error; err != nil {
 		return nil, err
@@ -2030,7 +2917,7 @@ func (dao *RiskDAO) ReadByUserID(m int) ([]models.Risk, error) {
 
 // ReadByUserIDT will return a transaction that
 // can be used to find all models matching the value given by parameter
-func (dao *RiskDAO) ReadByUserIDT(m int) (*gorm.DB, error) {
+func (dao *RiskDAO) ReadByUserIDT(m uint) (*gorm.DB, error) {
 	retVal := dao.db.Where(&models.Risk{UserID: m})
 
 	return retVal, retVal.Error
@@ -2038,7 +2925,7 @@ func (dao *RiskDAO) ReadByUserIDT(m int) (*gorm.DB, error) {
 
 // DeleteByUserID deletes all records in database with
 // UserID the same as parameter given
-func (dao *RiskDAO) DeleteByUserID(m int) (error) {
+func (dao *RiskDAO) DeleteByUserID(m uint) (error) {
 	if err := dao.db.Where(&models.Risk{UserID: m}).Delete(&models.Risk{}).Error; err != nil {
 		return err
 	}
@@ -2048,7 +2935,7 @@ func (dao *RiskDAO) DeleteByUserID(m int) (error) {
 // EditByUserID will edit all records in database
 // with the same UserID as parameter given
 // using model given by parameter
-func (dao *RiskDAO) EditByUserID(m int, newVals *models.Risk) (error) {
+func (dao *RiskDAO) EditByUserID(m uint, newVals *models.Risk) (error) {
 	if err := dao.db.Table("risks").Where(&models.Risk{UserID: m}).Updates(newVals).Error; err != nil {
 		return err
 	}
@@ -2057,7 +2944,7 @@ func (dao *RiskDAO) EditByUserID(m int, newVals *models.Risk) (error) {
 
 // SetUserID will set UserID
 // to a value given by parameter
-func (dao *RiskDAO) SetUserID(m *models.Risk, newVal int) (*models.Risk, error) {
+func (dao *RiskDAO) SetUserID(m *models.Risk, newVal uint) (*models.Risk, error) {
 	m.UserID = newVal
 	record, err := dao.ReadByID((m.ID))
 	if err != nil {
@@ -2072,7 +2959,7 @@ func (dao *RiskDAO) SetUserID(m *models.Risk, newVal int) (*models.Risk, error) 
 }
 
 // ReadByUserID is a mock implementation of ReadByUserID method
-func (mock *RiskDAOMock) ReadByUserID(m int) ([]models.Risk, error) {
+func (mock *RiskDAOMock) ReadByUserID(m uint) ([]models.Risk, error) {
 	ret := make([]models.Risk, 0, len(mock.db))
 	for _, val := range mock.db {
 		if val.UserID == m {
@@ -2084,12 +2971,12 @@ func (mock *RiskDAOMock) ReadByUserID(m int) ([]models.Risk, error) {
 }
 
 // ReadByUserIDT is a mock implementation of ReadByUserIDT method
-func (mock *RiskDAOMock) ReadByUserIDT(m int) (*gorm.DB, error) {
+func (mock *RiskDAOMock) ReadByUserIDT(m uint) (*gorm.DB, error) {
 	return nil, nil
 }
 
 // DeleteByUserID is a mock implementation of DeleteByUserID method
-func (mock *RiskDAOMock) DeleteByUserID(m int) (error) {
+func (mock *RiskDAOMock) DeleteByUserID(m uint) (error) {
 	for _, val := range mock.db {
 		if val.UserID == m {
 			delete(mock.db, val.ID)
@@ -2100,7 +2987,7 @@ func (mock *RiskDAOMock) DeleteByUserID(m int) (error) {
 }
 
 // EditByUserID is a mock implementation of EditByUserID method
-func (mock *RiskDAOMock) EditByUserID(m int, newVals *models.Risk) (error) {
+func (mock *RiskDAOMock) EditByUserID(m uint, newVals *models.Risk) (error) {
 	for _, val := range mock.db {
 		if val.UserID == m {
 			id := val.ID
@@ -2114,7 +3001,7 @@ func (mock *RiskDAOMock) EditByUserID(m int, newVals *models.Risk) (error) {
 }
 
 // SetUserID is a mock implementation of SetUserID method
-func (mock *RiskDAOMock) SetUserID(m *models.Risk, newVal int) (*models.Risk, error) {
+func (mock *RiskDAOMock) SetUserID(m *models.Risk, newVal uint) (*models.Risk, error) {
 	edit := mock.db[m.ID]
 	edit.UserID = newVal
 	edit.UpdatedAt = time.Now()
@@ -2231,48 +3118,48 @@ func (mock *RiskDAOMock) SetCost(m *models.Risk, newVal int) (*models.Risk, erro
 }
 
 
-// ReadByStatus will find all records
+// ReadByName will find all records
 // matching the value given by parameter
-func (dao *RiskDAO) ReadByStatus(m string) ([]models.Risk, error) {
+func (dao *RiskDAO) ReadByName(m string) ([]models.Risk, error) {
 	retVal := []models.Risk{}
-	if err := dao.db.Where(&models.Risk{Status: m}).Find(&retVal).Error; err != nil {
+	if err := dao.db.Where(&models.Risk{Name: m}).Find(&retVal).Error; err != nil {
 		return nil, err
 	}
 
 	return retVal, nil
 }
 
-// ReadByStatusT will return a transaction that
+// ReadByNameT will return a transaction that
 // can be used to find all models matching the value given by parameter
-func (dao *RiskDAO) ReadByStatusT(m string) (*gorm.DB, error) {
-	retVal := dao.db.Where(&models.Risk{Status: m})
+func (dao *RiskDAO) ReadByNameT(m string) (*gorm.DB, error) {
+	retVal := dao.db.Where(&models.Risk{Name: m})
 
 	return retVal, retVal.Error
 }
 
-// DeleteByStatus deletes all records in database with
-// Status the same as parameter given
-func (dao *RiskDAO) DeleteByStatus(m string) (error) {
-	if err := dao.db.Where(&models.Risk{Status: m}).Delete(&models.Risk{}).Error; err != nil {
+// DeleteByName deletes all records in database with
+// Name the same as parameter given
+func (dao *RiskDAO) DeleteByName(m string) (error) {
+	if err := dao.db.Where(&models.Risk{Name: m}).Delete(&models.Risk{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-// EditByStatus will edit all records in database
-// with the same Status as parameter given
+// EditByName will edit all records in database
+// with the same Name as parameter given
 // using model given by parameter
-func (dao *RiskDAO) EditByStatus(m string, newVals *models.Risk) (error) {
-	if err := dao.db.Table("risks").Where(&models.Risk{Status: m}).Updates(newVals).Error; err != nil {
+func (dao *RiskDAO) EditByName(m string, newVals *models.Risk) (error) {
+	if err := dao.db.Table("risks").Where(&models.Risk{Name: m}).Updates(newVals).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-// SetStatus will set Status
+// SetName will set Name
 // to a value given by parameter
-func (dao *RiskDAO) SetStatus(m *models.Risk, newVal string) (*models.Risk, error) {
-	m.Status = newVal
+func (dao *RiskDAO) SetName(m *models.Risk, newVal string) (*models.Risk, error) {
+	m.Name = newVal
 	record, err := dao.ReadByID((m.ID))
 	if err != nil {
 		return nil, err
@@ -2285,11 +3172,11 @@ func (dao *RiskDAO) SetStatus(m *models.Risk, newVal string) (*models.Risk, erro
 	return record, nil
 }
 
-// ReadByStatus is a mock implementation of ReadByStatus method
-func (mock *RiskDAOMock) ReadByStatus(m string) ([]models.Risk, error) {
+// ReadByName is a mock implementation of ReadByName method
+func (mock *RiskDAOMock) ReadByName(m string) ([]models.Risk, error) {
 	ret := make([]models.Risk, 0, len(mock.db))
 	for _, val := range mock.db {
-		if val.Status == m {
+		if val.Name == m {
 			ret = append(ret, val)
 		}
 	}
@@ -2297,15 +3184,15 @@ func (mock *RiskDAOMock) ReadByStatus(m string) ([]models.Risk, error) {
 	return ret, nil
 }
 
-// ReadByStatusT is a mock implementation of ReadByStatusT method
-func (mock *RiskDAOMock) ReadByStatusT(m string) (*gorm.DB, error) {
+// ReadByNameT is a mock implementation of ReadByNameT method
+func (mock *RiskDAOMock) ReadByNameT(m string) (*gorm.DB, error) {
 	return nil, nil
 }
 
-// DeleteByStatus is a mock implementation of DeleteByStatus method
-func (mock *RiskDAOMock) DeleteByStatus(m string) (error) {
+// DeleteByName is a mock implementation of DeleteByName method
+func (mock *RiskDAOMock) DeleteByName(m string) (error) {
 	for _, val := range mock.db {
-		if val.Status == m {
+		if val.Name == m {
 			delete(mock.db, val.ID)
 		}
 	}
@@ -2313,10 +3200,10 @@ func (mock *RiskDAOMock) DeleteByStatus(m string) (error) {
 	return nil
 }
 
-// EditByStatus is a mock implementation of EditByStatus method
-func (mock *RiskDAOMock) EditByStatus(m string, newVals *models.Risk) (error) {
+// EditByName is a mock implementation of EditByName method
+func (mock *RiskDAOMock) EditByName(m string, newVals *models.Risk) (error) {
 	for _, val := range mock.db {
-		if val.Status == m {
+		if val.Name == m {
 			id := val.ID
 			val = *newVals
 			val.ID = id
@@ -2327,577 +3214,10 @@ func (mock *RiskDAOMock) EditByStatus(m string, newVals *models.Risk) (error) {
 	return nil
 }
 
-// SetStatus is a mock implementation of SetStatus method
-func (mock *RiskDAOMock) SetStatus(m *models.Risk, newVal string) (*models.Risk, error) {
+// SetName is a mock implementation of SetName method
+func (mock *RiskDAOMock) SetName(m *models.Risk, newVal string) (*models.Risk, error) {
 	edit := mock.db[m.ID]
-	edit.Status = newVal
-	edit.UpdatedAt = time.Now()
-
-	mock.db[m.ID] = edit
-	return &edit, nil
-}
-
-
-// ReadByTrigger will find all records
-// matching the value given by parameter
-func (dao *RiskDAO) ReadByTrigger(m string) ([]models.Risk, error) {
-	retVal := []models.Risk{}
-	if err := dao.db.Where(&models.Risk{Trigger: m}).Find(&retVal).Error; err != nil {
-		return nil, err
-	}
-
-	return retVal, nil
-}
-
-// ReadByTriggerT will return a transaction that
-// can be used to find all models matching the value given by parameter
-func (dao *RiskDAO) ReadByTriggerT(m string) (*gorm.DB, error) {
-	retVal := dao.db.Where(&models.Risk{Trigger: m})
-
-	return retVal, retVal.Error
-}
-
-// DeleteByTrigger deletes all records in database with
-// Trigger the same as parameter given
-func (dao *RiskDAO) DeleteByTrigger(m string) (error) {
-	if err := dao.db.Where(&models.Risk{Trigger: m}).Delete(&models.Risk{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// EditByTrigger will edit all records in database
-// with the same Trigger as parameter given
-// using model given by parameter
-func (dao *RiskDAO) EditByTrigger(m string, newVals *models.Risk) (error) {
-	if err := dao.db.Table("risks").Where(&models.Risk{Trigger: m}).Updates(newVals).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// SetTrigger will set Trigger
-// to a value given by parameter
-func (dao *RiskDAO) SetTrigger(m *models.Risk, newVal string) (*models.Risk, error) {
-	m.Trigger = newVal
-	record, err := dao.ReadByID((m.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
-		return nil, err
-	}
-
-	return record, nil
-}
-
-// ReadByTrigger is a mock implementation of ReadByTrigger method
-func (mock *RiskDAOMock) ReadByTrigger(m string) ([]models.Risk, error) {
-	ret := make([]models.Risk, 0, len(mock.db))
-	for _, val := range mock.db {
-		if val.Trigger == m {
-			ret = append(ret, val)
-		}
-	}
-
-	return ret, nil
-}
-
-// ReadByTriggerT is a mock implementation of ReadByTriggerT method
-func (mock *RiskDAOMock) ReadByTriggerT(m string) (*gorm.DB, error) {
-	return nil, nil
-}
-
-// DeleteByTrigger is a mock implementation of DeleteByTrigger method
-func (mock *RiskDAOMock) DeleteByTrigger(m string) (error) {
-	for _, val := range mock.db {
-		if val.Trigger == m {
-			delete(mock.db, val.ID)
-		}
-	}
-
-	return nil
-}
-
-// EditByTrigger is a mock implementation of EditByTrigger method
-func (mock *RiskDAOMock) EditByTrigger(m string, newVals *models.Risk) (error) {
-	for _, val := range mock.db {
-		if val.Trigger == m {
-			id := val.ID
-			val = *newVals
-			val.ID = id
-			val.UpdatedAt = time.Now()
-		}
-	}
-
-	return nil
-}
-
-// SetTrigger is a mock implementation of SetTrigger method
-func (mock *RiskDAOMock) SetTrigger(m *models.Risk, newVal string) (*models.Risk, error) {
-	edit := mock.db[m.ID]
-	edit.Trigger = newVal
-	edit.UpdatedAt = time.Now()
-
-	mock.db[m.ID] = edit
-	return &edit, nil
-}
-
-
-// SetStart will set a Start property of a model
-// to value given by parameter
-func (dao *RiskDAO) SetStart(m *models.Risk, str time.Time) (*models.Risk, error) {
-	m.Start = str
-	var err error
-	m, err = dao.Update(m, m.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
-
-func (mock *RiskDAOMock) SetStart(m *models.Risk, str time.Time) (*models.Risk, error) {
-	edit := mock.db[m.ID]
-	edit.Start = str
-
-	mock.db[m.ID] = edit
-	return &edit, nil
-}
-
-
-// SetEnd will set a End property of a model
-// to value given by parameter
-func (dao *RiskDAO) SetEnd(m *models.Risk, str time.Time) (*models.Risk, error) {
-	m.End = str
-	var err error
-	m, err = dao.Update(m, m.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
-
-func (mock *RiskDAOMock) SetEnd(m *models.Risk, str time.Time) (*models.Risk, error) {
-	edit := mock.db[m.ID]
-	edit.End = str
-
-	mock.db[m.ID] = edit
-	return &edit, nil
-}
-
-
-// AddProjectsAssociation will add
-// an association to model given by parameter
-func (dao *RiskDAO) AddProjectsAssociation(m *models.Risk, asocVal *models.Project) (*models.Risk, error) {
-	if err := dao.db.Model(&m).Association("Projects").Append(asocVal).Error; err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
-
-// RemoveProjectsAssociation will remove
-// an association from model given by parameter
-func (dao *RiskDAO) RemoveProjectsAssociation(m *models.Risk, asocVal *models.Project) (*models.Risk, error) {
-	if err := dao.db.Model(&m).Association("Projects").Delete(asocVal).Error; err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
-
-// GetAllAssociatedProjects will get all
-// an association from model given by parameter
-func (dao *RiskDAO) GetAllAssociatedProjects(m *models.Risk) ([]models.Project, error) {
-	retVal := []models.Project{}
-
-	if err := dao.db.Model(&m).Related(&retVal).Error; err != nil {
-		return nil, err
-	}
-	return retVal, nil
-}
-
-// AddProjectsAssociation is a mock implementation of AddProjectsAssociation method
-func (mock *RiskDAOMock) AddProjectsAssociation(m *models.Risk, asocVal *models.Project) (*models.Risk, error) {
-	edit := mock.db[m.ID]
-	edit.Projects = append(edit.Projects, *asocVal)
-	edit.UpdatedAt = time.Now()
-	mock.db[m.ID] = edit
-
-	return &edit, nil
-}
-
-
-// GetAllAssociatedProjects is a mock implementation of GetAllAssociatedProjects method
-func (mock *RiskDAOMock) GetAllAssociatedProjects(m *models.Risk) ([]models.Project, error) {
-	return m.Projects, nil
-}
-
-
-// ReadByCategory will find all records
-// matching the value given by parameter
-func (dao *RiskDAO) ReadByCategory(m string) ([]models.Risk, error) {
-	retVal := []models.Risk{}
-	if err := dao.db.Where(&models.Risk{Category: m}).Find(&retVal).Error; err != nil {
-		return nil, err
-	}
-
-	return retVal, nil
-}
-
-// ReadByCategoryT will return a transaction that
-// can be used to find all models matching the value given by parameter
-func (dao *RiskDAO) ReadByCategoryT(m string) (*gorm.DB, error) {
-	retVal := dao.db.Where(&models.Risk{Category: m})
-
-	return retVal, retVal.Error
-}
-
-// DeleteByCategory deletes all records in database with
-// Category the same as parameter given
-func (dao *RiskDAO) DeleteByCategory(m string) (error) {
-	if err := dao.db.Where(&models.Risk{Category: m}).Delete(&models.Risk{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// EditByCategory will edit all records in database
-// with the same Category as parameter given
-// using model given by parameter
-func (dao *RiskDAO) EditByCategory(m string, newVals *models.Risk) (error) {
-	if err := dao.db.Table("risks").Where(&models.Risk{Category: m}).Updates(newVals).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// SetCategory will set Category
-// to a value given by parameter
-func (dao *RiskDAO) SetCategory(m *models.Risk, newVal string) (*models.Risk, error) {
-	m.Category = newVal
-	record, err := dao.ReadByID((m.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
-		return nil, err
-	}
-
-	return record, nil
-}
-
-// ReadByCategory is a mock implementation of ReadByCategory method
-func (mock *RiskDAOMock) ReadByCategory(m string) ([]models.Risk, error) {
-	ret := make([]models.Risk, 0, len(mock.db))
-	for _, val := range mock.db {
-		if val.Category == m {
-			ret = append(ret, val)
-		}
-	}
-
-	return ret, nil
-}
-
-// ReadByCategoryT is a mock implementation of ReadByCategoryT method
-func (mock *RiskDAOMock) ReadByCategoryT(m string) (*gorm.DB, error) {
-	return nil, nil
-}
-
-// DeleteByCategory is a mock implementation of DeleteByCategory method
-func (mock *RiskDAOMock) DeleteByCategory(m string) (error) {
-	for _, val := range mock.db {
-		if val.Category == m {
-			delete(mock.db, val.ID)
-		}
-	}
-
-	return nil
-}
-
-// EditByCategory is a mock implementation of EditByCategory method
-func (mock *RiskDAOMock) EditByCategory(m string, newVals *models.Risk) (error) {
-	for _, val := range mock.db {
-		if val.Category == m {
-			id := val.ID
-			val = *newVals
-			val.ID = id
-			val.UpdatedAt = time.Now()
-		}
-	}
-
-	return nil
-}
-
-// SetCategory is a mock implementation of SetCategory method
-func (mock *RiskDAOMock) SetCategory(m *models.Risk, newVal string) (*models.Risk, error) {
-	edit := mock.db[m.ID]
-	edit.Category = newVal
-	edit.UpdatedAt = time.Now()
-
-	mock.db[m.ID] = edit
-	return &edit, nil
-}
-
-
-// AddCounterMeasuresAssociation will add
-// an association to model given by parameter
-func (dao *RiskDAO) AddCounterMeasuresAssociation(m *models.Risk, asocVal *models.CounterMeasure) (*models.Risk, error) {
-	if err := dao.db.Model(&m).Association("CounterMeasures").Append(asocVal).Error; err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
-
-// RemoveCounterMeasuresAssociation will remove
-// an association from model given by parameter
-func (dao *RiskDAO) RemoveCounterMeasuresAssociation(m *models.Risk, asocVal *models.CounterMeasure) (*models.Risk, error) {
-	if err := dao.db.Model(&m).Association("CounterMeasures").Delete(asocVal).Error; err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
-
-// GetAllAssociatedCounterMeasures will get all
-// an association from model given by parameter
-func (dao *RiskDAO) GetAllAssociatedCounterMeasures(m *models.Risk) ([]models.CounterMeasure, error) {
-	retVal := []models.CounterMeasure{}
-
-	if err := dao.db.Model(&m).Related(&retVal).Error; err != nil {
-		return nil, err
-	}
-	return retVal, nil
-}
-
-// AddCounterMeasuresAssociation is a mock implementation of AddCounterMeasuresAssociation method
-func (mock *RiskDAOMock) AddCounterMeasuresAssociation(m *models.Risk, asocVal *models.CounterMeasure) (*models.Risk, error) {
-	edit := mock.db[m.ID]
-	edit.CounterMeasures = append(edit.CounterMeasures, *asocVal)
-	edit.UpdatedAt = time.Now()
-	mock.db[m.ID] = edit
-
-	return &edit, nil
-}
-
-// GetAllAssociatedCounterMeasures is a mock implementation of GetAllAssociatedCounterMeasures method
-func (mock *RiskDAOMock) GetAllAssociatedCounterMeasures(m *models.Risk) ([]models.CounterMeasure, error) {
-	return m.CounterMeasures, nil
-}
-
-
-// ReadByValue will find all records
-// matching the value given by parameter
-func (dao *RiskDAO) ReadByValue(m int) ([]models.Risk, error) {
-	retVal := []models.Risk{}
-	if err := dao.db.Where(&models.Risk{Value: m}).Find(&retVal).Error; err != nil {
-		return nil, err
-	}
-
-	return retVal, nil
-}
-
-// ReadByValueT will return a transaction that
-// can be used to find all models matching the value given by parameter
-func (dao *RiskDAO) ReadByValueT(m int) (*gorm.DB, error) {
-	retVal := dao.db.Where(&models.Risk{Value: m})
-
-	return retVal, retVal.Error
-}
-
-// DeleteByValue deletes all records in database with
-// Value the same as parameter given
-func (dao *RiskDAO) DeleteByValue(m int) (error) {
-	if err := dao.db.Where(&models.Risk{Value: m}).Delete(&models.Risk{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// EditByValue will edit all records in database
-// with the same Value as parameter given
-// using model given by parameter
-func (dao *RiskDAO) EditByValue(m int, newVals *models.Risk) (error) {
-	if err := dao.db.Table("risks").Where(&models.Risk{Value: m}).Updates(newVals).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// SetValue will set Value
-// to a value given by parameter
-func (dao *RiskDAO) SetValue(m *models.Risk, newVal int) (*models.Risk, error) {
-	m.Value = newVal
-	record, err := dao.ReadByID((m.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
-		return nil, err
-	}
-
-	return record, nil
-}
-
-// ReadByValue is a mock implementation of ReadByValue method
-func (mock *RiskDAOMock) ReadByValue(m int) ([]models.Risk, error) {
-	ret := make([]models.Risk, 0, len(mock.db))
-	for _, val := range mock.db {
-		if val.Value == m {
-			ret = append(ret, val)
-		}
-	}
-
-	return ret, nil
-}
-
-// ReadByValueT is a mock implementation of ReadByValueT method
-func (mock *RiskDAOMock) ReadByValueT(m int) (*gorm.DB, error) {
-	return nil, nil
-}
-
-// DeleteByValue is a mock implementation of DeleteByValue method
-func (mock *RiskDAOMock) DeleteByValue(m int) (error) {
-	for _, val := range mock.db {
-		if val.Value == m {
-			delete(mock.db, val.ID)
-		}
-	}
-
-	return nil
-}
-
-// EditByValue is a mock implementation of EditByValue method
-func (mock *RiskDAOMock) EditByValue(m int, newVals *models.Risk) (error) {
-	for _, val := range mock.db {
-		if val.Value == m {
-			id := val.ID
-			val = *newVals
-			val.ID = id
-			val.UpdatedAt = time.Now()
-		}
-	}
-
-	return nil
-}
-
-// SetValue is a mock implementation of SetValue method
-func (mock *RiskDAOMock) SetValue(m *models.Risk, newVal int) (*models.Risk, error) {
-	edit := mock.db[m.ID]
-	edit.Value = newVal
-	edit.UpdatedAt = time.Now()
-
-	mock.db[m.ID] = edit
-	return &edit, nil
-}
-
-
-// ReadByDescription will find all records
-// matching the value given by parameter
-func (dao *RiskDAO) ReadByDescription(m string) ([]models.Risk, error) {
-	retVal := []models.Risk{}
-	if err := dao.db.Where(&models.Risk{Description: m}).Find(&retVal).Error; err != nil {
-		return nil, err
-	}
-
-	return retVal, nil
-}
-
-// ReadByDescriptionT will return a transaction that
-// can be used to find all models matching the value given by parameter
-func (dao *RiskDAO) ReadByDescriptionT(m string) (*gorm.DB, error) {
-	retVal := dao.db.Where(&models.Risk{Description: m})
-
-	return retVal, retVal.Error
-}
-
-// DeleteByDescription deletes all records in database with
-// Description the same as parameter given
-func (dao *RiskDAO) DeleteByDescription(m string) (error) {
-	if err := dao.db.Where(&models.Risk{Description: m}).Delete(&models.Risk{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// EditByDescription will edit all records in database
-// with the same Description as parameter given
-// using model given by parameter
-func (dao *RiskDAO) EditByDescription(m string, newVals *models.Risk) (error) {
-	if err := dao.db.Table("risks").Where(&models.Risk{Description: m}).Updates(newVals).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// SetDescription will set Description
-// to a value given by parameter
-func (dao *RiskDAO) SetDescription(m *models.Risk, newVal string) (*models.Risk, error) {
-	m.Description = newVal
-	record, err := dao.ReadByID((m.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	if err := dao.db.Model(&record).Updates(m).Error; err != nil {
-		return nil, err
-	}
-
-	return record, nil
-}
-
-// ReadByDescription is a mock implementation of ReadByDescription method
-func (mock *RiskDAOMock) ReadByDescription(m string) ([]models.Risk, error) {
-	ret := make([]models.Risk, 0, len(mock.db))
-	for _, val := range mock.db {
-		if val.Description == m {
-			ret = append(ret, val)
-		}
-	}
-
-	return ret, nil
-}
-
-// ReadByDescriptionT is a mock implementation of ReadByDescriptionT method
-func (mock *RiskDAOMock) ReadByDescriptionT(m string) (*gorm.DB, error) {
-	return nil, nil
-}
-
-// DeleteByDescription is a mock implementation of DeleteByDescription method
-func (mock *RiskDAOMock) DeleteByDescription(m string) (error) {
-	for _, val := range mock.db {
-		if val.Description == m {
-			delete(mock.db, val.ID)
-		}
-	}
-
-	return nil
-}
-
-// EditByDescription is a mock implementation of EditByDescription method
-func (mock *RiskDAOMock) EditByDescription(m string, newVals *models.Risk) (error) {
-	for _, val := range mock.db {
-		if val.Description == m {
-			id := val.ID
-			val = *newVals
-			val.ID = id
-			val.UpdatedAt = time.Now()
-		}
-	}
-
-	return nil
-}
-
-// SetDescription is a mock implementation of SetDescription method
-func (mock *RiskDAOMock) SetDescription(m *models.Risk, newVal string) (*models.Risk, error) {
-	edit := mock.db[m.ID]
-	edit.Description = newVal
+	edit.Name = newVal
 	edit.UpdatedAt = time.Now()
 
 	mock.db[m.ID] = edit
@@ -3062,59 +3382,69 @@ type RiskDAOInterface interface {
 	 GetUpdatedAfter(timestamp time.Time) ([]models.Risk, error)
 	 GetAll() ([]models.Risk, error)
 	 ExecuteCustomQueryT(query string) (*gorm.DB, error)
-	 ReadByProbability(m float64) ([]models.Risk, error)
-	 ReadByProbabilityT(m float64) (*gorm.DB, error)
-	 DeleteByProbability(m float64) (error)
-	 EditByProbability(m float64, newVals *models.Risk) (error)
-	 SetProbability(m *models.Risk, newVal float64) (*models.Risk, error)
-	 ReadByName(m string) ([]models.Risk, error)
-	 ReadByNameT(m string) (*gorm.DB, error)
-	 DeleteByName(m string) (error)
-	 EditByName(m string, newVals *models.Risk) (error)
-	 SetName(m *models.Risk, newVal string) (*models.Risk, error)
-	 ReadByUserID(m int) ([]models.Risk, error)
-	 ReadByUserIDT(m int) (*gorm.DB, error)
-	 DeleteByUserID(m int) (error)
-	 EditByUserID(m int, newVals *models.Risk) (error)
-	 SetUserID(m *models.Risk, newVal int) (*models.Risk, error)
-	 ReadByCost(m int) ([]models.Risk, error)
-	 ReadByCostT(m int) (*gorm.DB, error)
-	 DeleteByCost(m int) (error)
-	 EditByCost(m int, newVals *models.Risk) (error)
-	 SetCost(m *models.Risk, newVal int) (*models.Risk, error)
-	 ReadByStatus(m string) ([]models.Risk, error)
-	 ReadByStatusT(m string) (*gorm.DB, error)
-	 DeleteByStatus(m string) (error)
-	 EditByStatus(m string, newVals *models.Risk) (error)
-	 SetStatus(m *models.Risk, newVal string) (*models.Risk, error)
+	 SetStart(m *models.Risk, str time.Time) (*models.Risk, error)
 	 ReadByTrigger(m string) ([]models.Risk, error)
 	 ReadByTriggerT(m string) (*gorm.DB, error)
 	 DeleteByTrigger(m string) (error)
 	 EditByTrigger(m string, newVals *models.Risk) (error)
 	 SetTrigger(m *models.Risk, newVal string) (*models.Risk, error)
-	 SetStart(m *models.Risk, str time.Time) (*models.Risk, error)
+	 ReadByImpact(m float64) ([]models.Risk, error)
+	 ReadByImpactT(m float64) (*gorm.DB, error)
+	 DeleteByImpact(m float64) (error)
+	 EditByImpact(m float64, newVals *models.Risk) (error)
+	 SetImpact(m *models.Risk, newVal float64) (*models.Risk, error)
 	 SetEnd(m *models.Risk, str time.Time) (*models.Risk, error)
 	 AddProjectsAssociation(m *models.Risk, asocVal *models.Project) (*models.Risk, error)
 	 RemoveProjectsAssociation(m *models.Risk, asocVal *models.Project) (*models.Risk, error)
 	 GetAllAssociatedProjects(m *models.Risk) ([]models.Project, error)
+	 ReadByProbability(m float64) ([]models.Risk, error)
+	 ReadByProbabilityT(m float64) (*gorm.DB, error)
+	 DeleteByProbability(m float64) (error)
+	 EditByProbability(m float64, newVals *models.Risk) (error)
+	 SetProbability(m *models.Risk, newVal float64) (*models.Risk, error)
 	 ReadByCategory(m string) ([]models.Risk, error)
 	 ReadByCategoryT(m string) (*gorm.DB, error)
 	 DeleteByCategory(m string) (error)
 	 EditByCategory(m string, newVals *models.Risk) (error)
 	 SetCategory(m *models.Risk, newVal string) (*models.Risk, error)
-	 AddCounterMeasuresAssociation(m *models.Risk, asocVal *models.CounterMeasure) (*models.Risk, error)
-	 RemoveCounterMeasuresAssociation(m *models.Risk, asocVal *models.CounterMeasure) (*models.Risk, error)
-	 GetAllAssociatedCounterMeasures(m *models.Risk) ([]models.CounterMeasure, error)
-	 ReadByValue(m int) ([]models.Risk, error)
-	 ReadByValueT(m int) (*gorm.DB, error)
-	 DeleteByValue(m int) (error)
-	 EditByValue(m int, newVals *models.Risk) (error)
-	 SetValue(m *models.Risk, newVal int) (*models.Risk, error)
+	 ReadByStatus(m string) ([]models.Risk, error)
+	 ReadByStatusT(m string) (*gorm.DB, error)
+	 DeleteByStatus(m string) (error)
+	 EditByStatus(m string, newVals *models.Risk) (error)
+	 SetStatus(m *models.Risk, newVal string) (*models.Risk, error)
 	 ReadByDescription(m string) ([]models.Risk, error)
 	 ReadByDescriptionT(m string) (*gorm.DB, error)
 	 DeleteByDescription(m string) (error)
 	 EditByDescription(m string, newVals *models.Risk) (error)
 	 SetDescription(m *models.Risk, newVal string) (*models.Risk, error)
+	 AddCounterMeasuresAssociation(m *models.Risk, asocVal *models.CounterMeasure) (*models.Risk, error)
+	 RemoveCounterMeasuresAssociation(m *models.Risk, asocVal *models.CounterMeasure) (*models.Risk, error)
+	 GetAllAssociatedCounterMeasures(m *models.Risk) ([]models.CounterMeasure, error)
+	 ReadByValue(m float64) ([]models.Risk, error)
+	 ReadByValueT(m float64) (*gorm.DB, error)
+	 DeleteByValue(m float64) (error)
+	 EditByValue(m float64, newVals *models.Risk) (error)
+	 SetValue(m *models.Risk, newVal float64) (*models.Risk, error)
+	 ReadByRisk(m float64) ([]models.Risk, error)
+	 ReadByRiskT(m float64) (*gorm.DB, error)
+	 DeleteByRisk(m float64) (error)
+	 EditByRisk(m float64, newVals *models.Risk) (error)
+	 SetRisk(m *models.Risk, newVal float64) (*models.Risk, error)
+	 ReadByUserID(m uint) ([]models.Risk, error)
+	 ReadByUserIDT(m uint) (*gorm.DB, error)
+	 DeleteByUserID(m uint) (error)
+	 EditByUserID(m uint, newVals *models.Risk) (error)
+	 SetUserID(m *models.Risk, newVal uint) (*models.Risk, error)
+	 ReadByCost(m int) ([]models.Risk, error)
+	 ReadByCostT(m int) (*gorm.DB, error)
+	 DeleteByCost(m int) (error)
+	 EditByCost(m int, newVals *models.Risk) (error)
+	 SetCost(m *models.Risk, newVal int) (*models.Risk, error)
+	 ReadByName(m string) ([]models.Risk, error)
+	 ReadByNameT(m string) (*gorm.DB, error)
+	 DeleteByName(m string) (error)
+	 EditByName(m string, newVals *models.Risk) (error)
+	 SetName(m *models.Risk, newVal string) (*models.Risk, error)
 	 ReadByThreat(m string) ([]models.Risk, error)
 	 ReadByThreatT(m string) (*gorm.DB, error)
 	 DeleteByThreat(m string) (error)
@@ -3651,9 +3981,8 @@ func (dao *CounterMeasureDAO) RemoveRisksAssociation(m *models.CounterMeasure, a
 func (dao *CounterMeasureDAO) GetAllAssociatedRisks(m *models.CounterMeasure) ([]models.Risk, error) {
 	retVal := []models.Risk{}
 
-	if err := dao.db.Model(&m).Related(&retVal).Error; err != nil {
-		return nil, err
-	}
+	dao.db.Model(&m).Association("Risks").Find(&retVal)
+
 	return retVal, nil
 }
 
@@ -3665,6 +3994,22 @@ func (mock *CounterMeasureDAOMock) AddRisksAssociation(m *models.CounterMeasure,
 	mock.db[m.ID] = edit
 
 	return &edit, nil
+}
+
+// RemoveRisksAssociation is a mock implementation of RemoveRisksAssociation method
+func (mock *CounterMeasureDAOMock) RemoveRisksAssociation(m *models.CounterMeasure, asocVal *models.Risk) (*models.CounterMeasure, error) {
+	a := m.Risks
+	m.UpdatedAt = time.Now()
+	deletedIndex := 0
+	for j, val := range a {
+		if val.ID == asocVal.ID {
+			deletedIndex = j
+		}
+	}
+	a[deletedIndex] = a[len(a)-1]
+	a = a[:len(a)-1]
+
+	return m, nil
 }
 
 // GetAllAssociatedRisks is a mock implementation of GetAllAssociatedRisks method
