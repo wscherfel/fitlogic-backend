@@ -14,6 +14,8 @@ type CmControllerConfig struct {
 	CmDao *access.CounterMeasureDAO
 }
 
+// CmController is a controller for CounterMeasures
+// it is currently not used, but has simple CRUD implemented
 type CmController struct {
 	CmControllerConfig
 }
@@ -56,6 +58,7 @@ func NewCounterMeasureController(c CmControllerConfig) *CmController {
 	}
 }
 
+// Create will create a new countermeasure
 func (c *CmController) Create(ctx echo.Context) error {
 	_, _, err := common.GetUserIdAndRoleFromToken(ctx.Get("user").(*jwt.Token))
 	if err != nil {
@@ -74,6 +77,7 @@ func (c *CmController) Create(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, cm)
 }
 
+// GetAll will return all countermeasures
 func (c *CmController) GetAll(ctx echo.Context) error {
 	_, _, err := common.GetUserIdAndRoleFromToken(ctx.Get("user").(*jwt.Token))
 	if err != nil {
@@ -88,6 +92,7 @@ func (c *CmController) GetAll(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, cms)
 }
 
+// ReadByID will return detail of countermeasure
 func (c *CmController) ReadByID(ctx echo.Context)error {
 	pathIDuint64, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -115,6 +120,8 @@ func (c *CmController) ReadByID(ctx echo.Context)error {
 	return ctx.JSON(http.StatusOK, cm)
 }
 
+// UpdateByID will update countermeasure with ID in path
+// to new values sent in request body
 func (c *CmController) UpdateByID(ctx echo.Context) error {
 	pathIDuint64, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -144,6 +151,8 @@ func (c *CmController) UpdateByID(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, newVals)
 }
 
+// DeleteByID will delete countermeasure with id in path if logged user has
+// sufficient privileges
 func (c *CmController) DeleteByID(ctx echo.Context) error {
 	pathIDuint64, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {

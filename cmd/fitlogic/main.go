@@ -7,7 +7,7 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"github.com/wscherfel/fitlogic-backend/controllers"
-	"github.com/wscherfel/fitlogic-backend"
+	"github.com/spf13/viper"
 )
 
 func main() {
@@ -17,18 +17,29 @@ func main() {
 	}
 
 	// only for testing purposes, clean DB at every start
-	//db.DropTableIfExists(&models.User{}, &models.Project{}, &models.Risk{}, &models.CounterMeasure{})
+	// db.DropTableIfExists(&models.User{}, &models.Project{}, &models.Risk{}, &models.CounterMeasure{})
 
-	db.AutoMigrate(&models.User{}, &models.Project{}, &models.Risk{}, &models.CounterMeasure{})
+	// migrate the DB models
+	db.AutoMigrate(&models.User{}, &models.Project{}, &models.Risk{}/*, &models.CounterMeasure{}*/)
+
+	viper.SetConfigName("fitlogic-conf")
+	viper.SetConfigType("json")
+	viper.AddConfigPath(".")
+	err = viper.ReadInConfig()
+	if err != nil {
+		panic(err)
+	}
 
 	e := echo.New()
 	e.Use(middleware.Logger())
 
+	// create data access objects
 	userDao := access.NewUserDAO(db)
 	projectDao := access.NewProjectDAO(db)
 	riskDao := access.NewRiskDAO(db)
-	cmDao := access.NewCounterMeasureDAO(db)
+	//cmDao := access.NewCounterMeasureDAO(db)
 
+	// create controllers
 	userController := controllers.NewUserController(
 		controllers.UserControllerConfig{
 			UserDao: userDao,
@@ -38,35 +49,40 @@ func main() {
 		controllers.ProjectControllerConfig{
 			ProjectDao: projectDao,
 			UserDao: userDao,
+			RiskDao: riskDao,
 		})
 
 	riskController := controllers.NewRiskController(
 		controllers.RiskControllerConfig{
 			RiskDao: riskDao,
-			CmDao: cmDao,
+			//CmDao: cmDao,
 			ProjectDao: projectDao,
 			UserDao: userDao,
 		},
 	)
 
-	cmControlelr := controllers.NewCounterMeasureController(
+	/*cmControlelr := controllers.NewCounterMeasureController(
 		controllers.CmControllerConfig{
 			CmDao: cmDao,
 		},
-	)
+	)*/
 
 	// currently only endpoint that does not use JWT authentication
 	e.POST("/login", userController.Login)
 
-	users := e.Group("/users", middleware.JWT([]byte(fitlogic.Secret)))
+	secret := []byte(viper.GetString("Secret"))
+	// route user endpoints
+	users := e.Group("/users", middleware.JWT(secret))
 
 	users.POST("/", userController.Create)
 	users.GET("/", userController.Read)
 	users.GET("/:id", userController.ReadByID)
 	users.DELETE("/:id", userController.DeleteByID)
 	users.PUT("/:id", userController.UpdateByID)
+	users.POST("/:id/changepassword", userController.ChangePasswordByID)
 
-	projects := e.Group("/projects", middleware.JWT([]byte(fitlogic.Secret)))
+	// route project endpoints
+	projects := e.Group("/projects", middleware.JWT(secret))
 
 	projects.POST("/", projectController.Create)
 	projects.GET("/", projectController.GetAll)
@@ -76,23 +92,26 @@ func main() {
 	projects.POST("/:id/unassignrisks", projectController.UnAssignRisks)
 	projects.GET("/:id", projectController.ReadByID)
 	projects.PUT("/:id", projectController.UpdateByID)
+	projects.DELETE("/:id", projectController.DeleteByID)
+	projects.POST("/risks", projectController.GetRisksOfProjects)
 
-	risks := e.Group("/risks", middleware.JWT([]byte(fitlogic.Secret)))
+	// route risk endpoints
+	risks := e.Group("/risks", middleware.JWT(secret))
 
 	risks.POST("/", riskController.Create)
 	risks.GET("/", riskController.GetAll)
 	risks.GET("/:id", riskController.ReadByID)
 	risks.PUT("/:id", riskController.UpdateByID)
 	risks.DELETE("/:id", riskController.DeleteByID)
-	risks.POST("/:id/assigncms", riskController.AssignCms)
+	/*risks.POST("/:id/assigncms", riskController.AssignCms)
 	risks.POST("/:id/unassigncms", riskController.UnAssignCms)
 
-	cms := e.Group("/cms", middleware.JWT([]byte(fitlogic.Secret)))
+	cms := e.Group("/cms", middleware.JWT(secret))
 
 	cms.POST("/", cmControlelr.Create)
 	cms.GET("/", cmControlelr.GetAll)
 	cms.PUT("/:id", cmControlelr.UpdateByID)
-	cms.DELETE("/:id", cmControlelr.DeleteByID)
+	cms.DELETE("/:id", cmControlelr.DeleteByID)*/
 
-	e.Logger.Fatal(e.Start("0.0.0.0:"+fitlogic.ServerPort))
+	e.Logger.Fatal(e.Start("0.0.0.0:"+viper.GetString("Port")))
 }

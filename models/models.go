@@ -2,9 +2,9 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
-	"github.com/wscherfel/fitlogic-backend/common"
 )
 
+// constants for Roles and levels of Impact
 const (
 	RoleAdmin = 1
 	RoleManager = 2
@@ -18,38 +18,42 @@ const (
 )
 
 // @dao
+// User is a DB model of a user, email is unique in DB
 type User struct {
 	gorm.Model
 
 	Name string `valid:"required"`
 	Email string `valid:"email,required" gorm:"unique"`
-	Password string `valid:"required"`
+	Password string `valid:"required" json:",omitempty"`
 	Role int `valid:"required"`
 	Skills string
+	Status string
 
-	Projects []Project `gorm:"many2many:user_projects;"`
+	Projects []Project `gorm:"many2many:user_projects;" json:",omitempty"`
 
-	Risks []Risk
+	Risks []Risk `json:",omitempty"`
 }
 
 // @dao
+// Project is a DB model of a Project, name is unique in DB
 type Project struct {
 	gorm.Model
 
-	Start common.JSONTime
-	End common.JSONTime
+	Start string
+	End string
 	IsFinished bool
 	ManagerID uint
 
-	Name string
+	Name string `gorm:"unique"`
 	Description string
 
-	Users []User `gorm:"many2many:user_projects;"`
+	Users []User `gorm:"many2many:user_projects;" json:",omitempty"`
 
-	Risks []Risk `gorm:"many2many:risk_projects;"`
+	Risks []Risk `gorm:"many2many:risk_projects;" json:",omitempty"`
 }
 
 // @dao
+// Risk is a DB model of a Risk, name is unique in DB
 type Risk struct {
 	gorm.Model
 
@@ -58,7 +62,7 @@ type Risk struct {
 	Probability float64
 	Risk float64
 
-	Name string
+	Name string `gorm:"unique"`
 	Description string
 	Category string
 	Threat string
@@ -66,16 +70,22 @@ type Risk struct {
 	Trigger string
 	Impact float64
 
-	Start common.JSONTime
-	End common.JSONTime
+	Start string
+	End string
 
 	UserID uint
 
-	Projects []Project `gorm:"many2many:risk_projects;"`
+	Projects []Project `gorm:"many2many:risk_projects;" json:",omitempty"`
 
-	CounterMeasures []CounterMeasure `gorm:"many2many:risk_counter_measures;"`
+	CounterMeasureUsed bool
+	CounterMeasureCost int
+	CounterMeasureDesc string
 }
 
+// dao.db.Model(&m).Association("CounterMeasures").Find(&retVal)
+
+// CounterMeasure is a DB model of a countermeasure to risk,
+// currently deprecated
 // @dao
 type CounterMeasure struct {
 	gorm.Model

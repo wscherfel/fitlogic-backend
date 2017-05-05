@@ -4,12 +4,12 @@ import (
 	"github.com/wscherfel/fitlogic-backend/access"
 	"github.com/labstack/echo"
 	"github.com/wscherfel/fitlogic-backend/models"
-	"github.com/wscherfel/fitlogic-backend"
 	"time"
 	"github.com/wscherfel/fitlogic-backend/common"
 	"net/http"
 	"github.com/dgrijalva/jwt-go"
 	"strconv"
+	"github.com/spf13/viper"
 )
 
 type RiskControllerConfig struct {
@@ -49,19 +49,29 @@ type RiskAPI struct {
 
 	UserID uint
 
-	Projects []uint `json:"omitempty"`
-
-	CounterMeasures []uint `json:"omitempty"`
+	CounterMeasureUsed bool
+	CounterMeasureCost int
+	CounterMeasureDesc string
 }
 
 func MapAPIToRisk(req RiskAPI) (models.Risk, error){
-	start, err := time.Parse(fitlogic.TimeFormat, req.Start)
+	format := viper.GetString("TimeFormat")
+	start, err := time.Parse(format, req.Start)
 	if err != nil {
 		return models.Risk{}, err
 	}
-	end, err := time.Parse(fitlogic.TimeFormat, req.Start)
+	if !start.After(common.DateMin) {
+		return models.Risk{}, common.ErrDateOutOfRange
+	}
+	end, err := time.Parse(format, req.End)
 	if err != nil {
 		return models.Risk{}, err
+	}
+	if !end.Before(common.DateMax) {
+		return models.Risk{}, common.ErrDateOutOfRange
+	}
+	if end.Before(start) || end.Equal(start) {
+		return models.Risk{}, common.ErrStartDateAfterEnd
 	}
 
 	return models.Risk{
@@ -77,10 +87,14 @@ func MapAPIToRisk(req RiskAPI) (models.Risk, error){
 		Trigger: req.Trigger,
 		Impact: req.Impact,
 
-		Start: common.JSONTime{start},
-		End: common.JSONTime{end},
+		Start: req.Start,
+		End: req.End,
 
 		UserID: req.UserID,
+
+		CounterMeasureUsed: req.CounterMeasureUsed,
+		CounterMeasureCost: req.CounterMeasureCost,
+		CounterMeasureDesc: req.CounterMeasureDesc,
 	}, nil
 }
 
@@ -88,11 +102,6 @@ func MapRiskToAPI(r models.Risk) (RiskAPI) {
 	proj := []uint{}
 	for _, p := range r.Projects {
 		proj = append(proj, p.ID)
-	}
-
-	cms := []uint{}
-	for _, c := range r.CounterMeasures {
-		cms = append(cms, c.ID)
 	}
 
 	return RiskAPI{
@@ -108,11 +117,9 @@ func MapRiskToAPI(r models.Risk) (RiskAPI) {
 		Status: r.Status,
 		Trigger: r.Trigger,
 		Impact: r.Impact,
-		Start: r.Start.Time.Format(fitlogic.TimeFormat),
-		End: r.End.Time.Format(fitlogic.TimeFormat),
+		Start: r.Start,
+		End: r.End,
 		UserID: r.UserID,
-		Projects: proj,
-		CounterMeasures: cms,
 	}
 }
 
@@ -133,8 +140,14 @@ func (c *RiskController) Create(ctx echo.Context) error {
 	}
 
 
-	if role > models.RoleAdmin && risk.UserID != userID {
-		return ctx.JSON(http.StatusUnauthorized, common.CreateError(common.ErrUnsufficientPrivileges))
+	if risk.UserID != userID {
+		if role > models.RoleAdmin {
+			return ctx.JSON(http.StatusUnauthorized, common.CreateError(common.ErrUnsufficientPrivileges))
+		}
+		_, err := c.UserDao.ReadByID(risk.UserID)
+		if err != nil {
+			return ctx.JSON(http.StatusInternalServerError, common.CreateError(err))
+		}
 	}
 
 	err = c.RiskDao.Create(&risk)
@@ -181,7 +194,6 @@ func (c *RiskController) ReadByID(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, common.CreateError(err))
 	}
 
-	risk.CounterMeasures, err = c.RiskDao.GetAllAssociatedCounterMeasures(risk)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, common.CreateError(err))
 	}
@@ -253,7 +265,7 @@ func (c *RiskController) DeleteByID(ctx echo.Context) error {
 	return ctx.NoContent(http.StatusOK)
 }
 
-func (c *RiskController) AssignCms(ctx echo.Context) error {
+/*func (c *RiskController) AssignCms(ctx echo.Context) error {
 	pathIDuint64, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
 		return ctx.JSON(http.StatusBadRequest, common.CreateError(common.ErrIdInPathWrongFormat))
@@ -283,9 +295,9 @@ func (c *RiskController) AssignCms(ctx echo.Context) error {
 	}
 
 	return ctx.NoContent(http.StatusOK)
-}
+}*/
 
-func (c *RiskController) UnAssignCms(ctx echo.Context) error {
+/*func (c *RiskController) UnAssignCms(ctx echo.Context) error {
 	pathIDuint64, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
 		return ctx.JSON(http.StatusBadRequest, common.CreateError(common.ErrIdInPathWrongFormat))
@@ -315,4 +327,4 @@ func (c *RiskController) UnAssignCms(ctx echo.Context) error {
 	}
 
 	return ctx.NoContent(http.StatusOK)
-}
+*/
